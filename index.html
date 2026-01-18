@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sticky 라인 계산기</title>
+    <title>Scroll Fixed 계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -26,18 +26,18 @@
             max-width: 750px;
             display: flex;
             flex-direction: column;
-            position: relative; /* 자식 요소 위치 기준 */
+            position: relative; 
         }
 
-        /* ▼▼▼ 상단바 고정(Sticky) 설정 ▼▼▼ */
+        /* 상단바 고정 (Sticky) */
         .status-bar {
-            position: sticky; /* 스크롤 시 고정되는 속성 */
-            top: 0;           /* 화면 최상단에 붙음 */
-            z-index: 100;     /* 글자보다 위에 오도록 순서 지정 */
+            position: sticky; 
+            top: 0;           
+            z-index: 100;     
             
             display: flex;
             align-items: center;
-            background-color: #f8f9fa; /* 배경색 필수 (투명하면 글자가 비침) */
+            background-color: #f8f9fa; 
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 8px 15px;
@@ -46,8 +46,6 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
-            
-            /* 고정되었을 때 그림자를 줘서 떠있는 느낌 주기 */
             box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
 
@@ -143,7 +141,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="내용을 입력하세요. 스크롤을 내려도 상단바가 따라옵니다."></textarea>
+    <textarea id="textInput" placeholder="내용을 입력하세요."></textarea>
     
 </div>
 
@@ -156,6 +154,7 @@
     const selectChar = document.getElementById('selectChar');
     const selectNoSpace = document.getElementById('selectNoSpace');
 
+    // 토큰 계산
     function estimateTokens(text) {
         if (!text) return 0;
         const cjkMatch = text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g);
@@ -164,11 +163,13 @@
         return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
+    // 높이 자동 조절 (이제 클릭 시에는 실행되지 않음)
     function autoResize() {
         textInput.style.height = 'auto';
         textInput.style.height = textInput.scrollHeight + 'px';
     }
 
+    // 숫자 업데이트
     function updateCounts() {
         const text = textInput.value;
         
@@ -187,14 +188,21 @@
         } else {
             selectionGroup.classList.remove('active');
         }
-
-        autoResize();
     }
 
-    ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
+    // [핵심 변경] 이벤트 분리
+    // 1. 글자를 입력할 때만 -> 높이 조절 + 숫자 계산
+    textInput.addEventListener('input', function() {
+        autoResize();
+        updateCounts();
+    });
+
+    // 2. 클릭하거나 커서 이동 시 -> 숫자 계산만 수행 (높이 조절 X)
+    ['click', 'mouseup', 'keyup'].forEach(event => {
         textInput.addEventListener(event, updateCounts);
     });
 
+    // 초기 실행
     autoResize();
 </script>
 

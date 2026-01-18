@@ -3,115 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>자동 확장 글자수 계산기</title>
+    <title>심플 라인 계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: #f4f4f9;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* 내용이 길어지면 스크롤 할 수 있게 위쪽 정렬 */
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
-            padding: 40px 20px; /* 위아래 여백 추가 */
+            padding: 30px 20px;
             box-sizing: border-box;
-            overflow-y: auto; /* 전체 페이지 스크롤 허용 */
+            overflow-y: auto;
         }
         .container {
             background-color: white;
-            padding: 1.5rem;
+            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 700px;
-            /* 고정 높이 제거 */
+            max-width: 750px; /* 가로폭을 살짝 더 넓혀서 한 줄 표시가 원활하게 함 */
             display: flex;
             flex-direction: column;
         }
 
-        /* 통계 컨테이너 */
-        .stats-container {
+        /* ▼▼▼ 핵심 변경: 한 줄 통계 바 스타일 ▼▼▼ */
+        .status-bar {
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 15px;
-            position: sticky; /* 스크롤 내려도 통계창이 상단에 붙어있게 할지 선택 (여기선 뺌) */
-            top: 0;
-        }
-
-        .counter-row {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
             background-color: #f8f9fa;
-            padding: 10px 18px;
+            border: 1px solid #e9ecef;
             border-radius: 8px;
-            border: 1px solid transparent;
-        }
-        
-        .token-box {
-            background-color: #ede7f6;
-            border-color: #d1c4e9;
-        }
-
-        .counter-row.selection {
-            background-color: #e3f2fd; 
-            border-color: #bbdefb;
-            display: none; 
-        }
-        .counter-row.selection.active {
-            display: flex; 
-        }
-
-        .row-label {
-            font-weight: bold;
+            padding: 8px 15px;
+            font-size: 12px; /* 폰트 사이즈 작게 */
             color: #555;
-            font-size: 14px;
-            min-width: 80px;
+            flex-wrap: wrap; /* 화면이 너무 좁으면 줄바꿈 허용 */
+            gap: 15px; /* 항목 간 간격 */
+            margin-bottom: 15px;
         }
 
-        .count-group {
+        .stat-group {
             display: flex;
-            gap: 20px;
-            text-align: right;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #777;
         }
         
-        .count-item {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-        }
-
-        .count-item span {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 2px;
-        }
-        .count-item strong {
-            font-size: 16px;
+        .val {
+            font-weight: bold;
+            font-size: 13px;
             color: #333;
         }
 
-        .token-text {
-            color: #673ab7 !important;
+        /* 구분선 */
+        .divider {
+            width: 1px;
+            height: 12px;
+            background-color: #ccc;
+        }
+
+        /* 토큰 강조 */
+        .token-val {
+            color: #673ab7;
             font-weight: 800;
+        }
+
+        /* 선택 영역 (평소엔 숨김) */
+        .selection-group {
+            display: none; /* 기본 숨김 */
+            align-items: center;
+            gap: 15px;
+            background-color: #e3f2fd; /* 선택 시 배경색 */
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: auto; /* 우측 정렬 */
+        }
+        .selection-group.active {
+            display: flex;
+        }
+        .selection-group .val {
+            color: #1565c0;
         }
 
         /* 입력창 스타일 */
         textarea {
             width: 100%;
-            min-height: 300px; /* 초기 최소 높이 */
-            padding: 15px;
+            min-height: 400px; /* 기본 높이를 좀 더 시원하게 */
+            padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            resize: none; /* 사용자 수동 조절 불가 (자동으로 되니까) */
+            resize: none;
             font-size: 14px;
             box-sizing: border-box;
             outline: none;
             line-height: 1.6;
             font-family: 'Pretendard', sans-serif;
             color: #333;
-            overflow-y: hidden; /* 내부 스크롤바 숨김 (높이가 늘어나므로) */
+            overflow-y: hidden;
         }
         textarea:focus {
             border-color: #673ab7;
@@ -123,42 +116,25 @@
 
 <div class="container">
     
-    <div class="stats-container">
-        <div class="counter-row token-box">
-            <div class="row-label" style="color:#673ab7;">총 예상 토큰</div>
-            <div class="count-group">
-                <div class="count-item">
-                    <span>GPT/Gemini (Est.)</span>
-                    <strong id="totalToken" class="token-text">0</strong>
-                </div>
-            </div>
+    <div class="status-bar">
+        <div class="stat-group">
+            <span class="label" style="color:#673ab7;">AI 토큰</span>
+            <span class="val token-val" id="totalToken">0</span>
         </div>
 
-        <div class="counter-row">
-            <div class="row-label">전체 글자수</div>
-            <div class="count-group">
-                <div class="count-item">
-                    <span>공백 포함</span>
-                    <strong id="totalChar">0</strong>
-                </div>
-                <div class="count-item">
-                    <span>공백 제외</span>
-                    <strong id="totalNoSpace">0</strong>
-                </div>
-            </div>
+        <div class="divider"></div>
+
+        <div class="stat-group">
+            <span class="label">전체</span>
+            <span class="val"><span id="totalChar">0</span>자</span>
+            <span style="color:#aaa; font-size:11px;">(공제 <span id="totalNoSpace">0</span>)</span>
         </div>
 
-        <div class="counter-row selection" id="selectionRow">
-            <div class="row-label">선택 영역</div>
-            <div class="count-group">
-                <div class="count-item">
-                    <span>공백 포함</span>
-                    <strong id="selectChar">0</strong>
-                </div>
-                <div class="count-item">
-                    <span>공백 제외</span>
-                    <strong id="selectNoSpace">0</strong>
-                </div>
+        <div class="selection-group" id="selectionGroup">
+            <div class="stat-group">
+                <span class="label" style="color:#1565c0;">선택</span>
+                <span class="val"><span id="selectChar">0</span>자</span>
+                <span style="color:#64b5f6; font-size:11px;">(공제 <span id="selectNoSpace">0</span>)</span>
             </div>
         </div>
     </div>
@@ -172,7 +148,9 @@
     const totalToken = document.getElementById('totalToken');
     const totalChar = document.getElementById('totalChar');
     const totalNoSpace = document.getElementById('totalNoSpace');
-    const selectionRow = document.getElementById('selectionRow');
+    
+    // 선택 영역 그룹
+    const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
     const selectNoSpace = document.getElementById('selectNoSpace');
 
@@ -184,34 +162,32 @@
         return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
-    // 높이 자동 조절 함수
     function autoResize() {
-        textInput.style.height = 'auto'; // 높이를 초기화해서 줄어들 때를 대비
-        textInput.style.height = textInput.scrollHeight + 'px'; // 내용 높이만큼 설정
+        textInput.style.height = 'auto';
+        textInput.style.height = textInput.scrollHeight + 'px';
     }
 
     function updateCounts() {
         const text = textInput.value;
         
-        // 통계 업데이트
+        // 전체 통계
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
         totalNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
 
-        // 선택 영역 업데이트
+        // 선택 영역 통계
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);
 
         if (selectedText.length > 0) {
-            selectionRow.classList.add('active'); 
+            selectionGroup.classList.add('active'); // 보이게 하기
             selectChar.textContent = selectedText.length.toLocaleString();
             selectNoSpace.textContent = selectedText.replace(/\s/g, '').length.toLocaleString();
         } else {
-            selectionRow.classList.remove('active'); 
+            selectionGroup.classList.remove('active'); // 숨기기
         }
 
-        // 높이 조절 실행
         autoResize();
     }
 
@@ -219,7 +195,6 @@
         textInput.addEventListener(event, updateCounts);
     });
 
-    // 초기 로드 시에도 높이 조절 (붙여넣기 등으로 내용이 있을 경우 대비)
     autoResize();
 
 </script>

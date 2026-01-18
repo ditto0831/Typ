@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 토큰 & 글자수 계산기 (Compact)</title>
+    <title>계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -13,59 +13,47 @@
             align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden; /* 전체 스크롤 방지 */
         }
         .container {
             background-color: white;
-            padding: 2rem;
+            padding: 1.5rem;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 650px;
+            max-width: 700px;
+            height: 90vh; /* 화면 높이의 90% 사용 */
+            display: flex;
+            flex-direction: column; /* 위에서 아래로 배치 */
+            box-sizing: border-box;
         }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            text-align: center;
-            margin-bottom: 20px;
-            font-size: 22px; /* 제목 크기도 약간 조정 */
-        }
-        .token-badge {
-            background-color: #673ab7;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 20px;
-            font-size: 11px;
-            vertical-align: middle;
-            margin-left: 8px;
-            font-weight: normal;
-        }
+
+        /* 입력창 스타일 */
         textarea {
             width: 100%;
-            height: 250px;
+            flex: 1; /* 남은 공간을 모두 차지함 (세로 확장) */
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            resize: vertical;
-            
-            /* ▼▼▼ 여기를 수정했습니다 (16px -> 14px) ▼▼▼ */
-            font-size: 14px; 
-            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
-            
+            resize: none; /* 사용자 임의 조절 막음 (자동으로 채워지므로) */
+            font-size: 14px; /* 요청하신 14px 유지 */
             box-sizing: border-box;
             outline: none;
             line-height: 1.6;
             font-family: 'Pretendard', sans-serif;
             color: #333;
+            margin-top: 15px; /* 통계 박스와의 간격 */
         }
         textarea:focus {
             border-color: #673ab7;
         }
         
+        /* 통계 컨테이너 */
         .stats-container {
-            margin-top: 15px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
+            flex-shrink: 0; /* 공간이 좁아져도 찌그러지지 않음 */
         }
 
         .counter-row {
@@ -73,18 +61,19 @@
             justify-content: space-between;
             align-items: center;
             background-color: #f8f9fa;
-            padding: 12px 18px; /* 패딩을 살짝 줄임 */
+            padding: 10px 18px;
             border-radius: 8px;
+            border: 1px solid transparent;
         }
         
         .token-box {
             background-color: #ede7f6;
-            border: 1px solid #d1c4e9;
+            border-color: #d1c4e9;
         }
 
         .counter-row.selection {
             background-color: #e3f2fd; 
-            border: 1px solid #bbdefb;
+            border-color: #bbdefb;
             display: none; 
         }
         .counter-row.selection.active {
@@ -94,13 +83,13 @@
         .row-label {
             font-weight: bold;
             color: #555;
-            font-size: 14px; /* 라벨 폰트 조정 */
+            font-size: 14px;
             min-width: 80px;
         }
 
         .count-group {
             display: flex;
-            gap: 25px;
+            gap: 20px;
             text-align: right;
         }
         
@@ -111,12 +100,12 @@
         }
 
         .count-item span {
-            font-size: 11px; /* 설명 폰트 조정 */
+            font-size: 11px;
             color: #888;
             margin-bottom: 2px;
         }
         .count-item strong {
-            font-size: 16px; /* 숫자 폰트 조정 (18px -> 16px) */
+            font-size: 16px;
             color: #333;
         }
 
@@ -129,16 +118,13 @@
 <body>
 
 <div class="container">
-    <h2>글자수 & 토큰 계산기 <span class="token-badge">AI Ready</span></h2>
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요."></textarea>
     
     <div class="stats-container">
-        
         <div class="counter-row token-box">
             <div class="row-label" style="color:#673ab7;">총 예상 토큰</div>
             <div class="count-group">
                 <div class="count-item">
-                    <span>GPT/Gemini 기준 (Est.)</span>
+                    <span>GPT/Gemini (Est.)</span>
                     <strong id="totalToken" class="token-text">0</strong>
                 </div>
             </div>
@@ -172,6 +158,9 @@
             </div>
         </div>
     </div>
+
+    <textarea id="textInput" placeholder="내용을 입력하세요."></textarea>
+    
 </div>
 
 <script>

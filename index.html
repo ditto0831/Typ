@@ -7,9 +7,9 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
     
     <meta property="og:type" content="website">
-    <meta property="og:title" content="10,000자 에디터">
-    <meta property="og:description" content="글자수 세기, 토큰 계산, 자동 저장 기능이 있는 심플 에디터">
-    <meta property="og:image" content="2.jpeg"> 
+    <meta property="og:title" content="글자수세기">
+    <meta property="og:description" content="자동 저장 기능이 있는 안전한 웹 에디터">
+    <meta property="og:image" content="2.jpeg">
 
     <title>글자수세기</title>
     <style>
@@ -164,7 +164,6 @@
             opacity: 1;
             bottom: 50px;
         }
-
     </style>
 </head>
 <body>
@@ -208,7 +207,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요."></textarea>
+    <textarea id="textInput" placeholder="내용을 입력하세요. 3분마다 자동으로 저장되며, 창을 닫아도 내용이 유지됩니다."></textarea>
     
     <div id="toast" class="toast">메시지</div>
 </div>
@@ -219,12 +218,47 @@
     const totalChar = document.getElementById('totalChar');
     const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
-    
     const btnUndo = document.getElementById('btnUndo');
     const btnRedo = document.getElementById('btnRedo');
     const btnCopy = document.getElementById('btnCopy');
     const btnPaste = document.getElementById('btnPaste');
     const toast = document.getElementById('toast');
+
+    // === [핵심 기능] 로컬 스토리지 키 값 ===
+    const STORAGE_KEY = 'my_editor_content_v1';
+
+    // 1. 페이지 로드 시 저장된 내용 불러오기
+    window.addEventListener('load', () => {
+        const savedContent = localStorage.getItem(STORAGE_KEY);
+        if (savedContent) {
+            textInput.value = savedContent;
+            updateCounts();
+            showToast('이전 작성 내용을 복구했습니다.');
+        }
+    });
+
+    // 2. 저장 함수
+    function saveContent(isAuto = false) {
+        localStorage.setItem(STORAGE_KEY, textInput.value);
+        if (isAuto) {
+            showToast('자동 저장 완료 (3분)');
+        }
+    }
+
+    // 3. 3분(180000ms)마다 자동 저장 실행
+    setInterval(() => {
+        if (textInput.value.length > 0) { // 내용이 있을 때만 저장
+            saveContent(true);
+        }
+    }, 180000); 
+
+    // 4. 창을 닫거나 새로고침할 때도 즉시 저장 (안전장치)
+    window.addEventListener('beforeunload', () => {
+        saveContent(false);
+    });
+
+
+    // --- 기존 기능들 ---
 
     function showToast(message) {
         toast.textContent = message;
@@ -275,7 +309,7 @@
             textInput.focus();
             showToast('붙여넣기 완료!');
         } catch (err) {
-            alert('브라우저 권한 문제로 붙여넣기에 실패했습니다. Ctrl+V를 이용해주세요.');
+            alert('보안상의 이유로 붙여넣기가 제한되었습니다. Ctrl+V를 사용해주세요.');
         }
     });
 

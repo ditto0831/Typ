@@ -3,41 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scroll Fixed 계산기</title>
+    <title>10000자 에디터</title>
     <style>
+        /* 화면 전체 레이아웃 고정 */
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            height: 100vh; /* 화면 전체 높이 사용 */
+            overflow: hidden; /* 브라우저 전체 스크롤 막음 (입력창 내부 스크롤 사용) */
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 30px 20px;
-            box-sizing: border-box;
-            overflow-y: auto;
         }
+
         .container {
             background-color: white;
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 750px;
+            max-width: 800px; /* 폭을 넓혀서 장문 작성에 유리하게 */
+            height: 100%; /* 부모 높이(화면 전체) 채우기 */
             display: flex;
-            flex-direction: column;
-            position: relative; 
+            flex-direction: column; /* 상단바 - 입력창 수직 배치 */
+            box-sizing: border-box;
         }
 
-        /* 상단바 고정 (Sticky) */
+        /* 상단 통계 바 (고정) */
         .status-bar {
-            position: sticky; 
-            top: 0;           
-            z-index: 100;     
-            
+            flex-shrink: 0; /* 크기 줄어들지 않음 */
             display: flex;
             align-items: center;
-            background-color: #f8f9fa; 
+            background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 8px 15px;
@@ -46,7 +45,6 @@
             flex-wrap: wrap;
             gap: 15px;
             margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
 
         .stat-group {
@@ -55,27 +53,10 @@
             gap: 6px;
         }
 
-        .label {
-            font-weight: 600;
-            color: #777;
-        }
-        
-        .val {
-            font-weight: bold;
-            font-size: 13px;
-            color: #333;
-        }
-
-        .divider {
-            width: 1px;
-            height: 12px;
-            background-color: #ccc;
-        }
-
-        .token-val {
-            color: #673ab7;
-            font-weight: 800;
-        }
+        .label { font-weight: 600; color: #777; }
+        .val { font-weight: bold; font-size: 13px; color: #333; }
+        .divider { width: 1px; height: 12px; background-color: #ccc; }
+        .token-val { color: #673ab7; font-weight: 800; }
 
         .selection-group {
             display: none;
@@ -86,30 +67,43 @@
             border-radius: 4px;
             margin-left: auto;
         }
-        .selection-group.active {
-            display: flex;
-        }
-        .selection-group .val {
-            color: #1565c0;
-        }
+        .selection-group.active { display: flex; }
+        .selection-group .val { color: #1565c0; }
 
+        /* 입력창 스타일 (핵심 변경) */
         textarea {
             width: 100%;
-            min-height: 400px;
-            padding: 10px;
+            flex: 1; /* 남은 공간을 모두 차지함 */
+            padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            resize: none;
+            resize: none; /* 크기 조절 핸들 제거 */
             font-size: 14px;
             box-sizing: border-box;
             outline: none;
             line-height: 1.6;
             font-family: 'Pretendard', sans-serif;
             color: #333;
-            overflow-y: hidden;
+            overflow-y: auto; /* 내용 많으면 내부 스크롤 생성 */
         }
         textarea:focus {
             border-color: #673ab7;
+        }
+
+        /* 스크롤바 디자인 (크롬/엣지) - 깔끔하게 */
+        textarea::-webkit-scrollbar {
+            width: 10px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #ccc; 
+            border-radius: 8px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover {
+            background: #bbb; 
         }
 
     </style>
@@ -141,7 +135,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="내용을 입력하세요."></textarea>
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요. 10,000자 이상의 긴 글도 안정적으로 작성할 수 있습니다."></textarea>
     
 </div>
 
@@ -154,7 +148,6 @@
     const selectChar = document.getElementById('selectChar');
     const selectNoSpace = document.getElementById('selectNoSpace');
 
-    // 토큰 계산
     function estimateTokens(text) {
         if (!text) return 0;
         const cjkMatch = text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g);
@@ -163,13 +156,9 @@
         return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
-    // 높이 자동 조절 (이제 클릭 시에는 실행되지 않음)
-    function autoResize() {
-        textInput.style.height = 'auto';
-        textInput.style.height = textInput.scrollHeight + 'px';
-    }
+    // 더 이상 높이 조절 함수(autoResize)가 필요 없습니다.
+    // 입력창이 이미 꽉 차있기 때문입니다.
 
-    // 숫자 업데이트
     function updateCounts() {
         const text = textInput.value;
         
@@ -190,20 +179,10 @@
         }
     }
 
-    // [핵심 변경] 이벤트 분리
-    // 1. 글자를 입력할 때만 -> 높이 조절 + 숫자 계산
-    textInput.addEventListener('input', function() {
-        autoResize();
-        updateCounts();
-    });
-
-    // 2. 클릭하거나 커서 이동 시 -> 숫자 계산만 수행 (높이 조절 X)
-    ['click', 'mouseup', 'keyup'].forEach(event => {
+    // 모든 이벤트에서 계산만 수행 (화면 흔들림 원천 차단)
+    ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
         textInput.addEventListener(event, updateCounts);
     });
-
-    // 초기 실행
-    autoResize();
 </script>
 
 </body>

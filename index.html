@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>글자수세기</title>
+    
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="10,000자 에디터">
+    <meta property="og:description" content="글자수 세기, 토큰 계산, 자동 저장 기능이 있는 심플 에디터">
+    
+    <meta property="og:image" content="2.jpg">
+    <title>10000자 에디터 (Share)</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -28,10 +34,9 @@
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            position: relative; /* 토스트 메시지 위치 기준 */
+            position: relative;
         }
 
-        /* 상단 통계 바 */
         .status-bar {
             flex-shrink: 0;
             display: flex;
@@ -47,7 +52,6 @@
             margin-bottom: 15px;
         }
 
-        /* 버튼 그룹 */
         .btn-group {
             display: flex;
             gap: 5px;
@@ -86,7 +90,6 @@
             fill: currentColor;
         }
 
-        /* 통계 텍스트 */
         .stat-group {
             display: flex;
             align-items: center;
@@ -110,7 +113,6 @@
         .selection-group.active { display: flex; }
         .selection-group .val { color: #1565c0; }
 
-        /* 입력창 */
         textarea {
             width: 100%;
             flex: 1;
@@ -135,19 +137,18 @@
         textarea::-webkit-scrollbar-thumb { background: #ccc; border-radius: 8px; }
         textarea::-webkit-scrollbar-thumb:hover { background: #bbb; }
 
-        /* ▼▼▼ 토스트 메시지 스타일 (새로 추가됨) ▼▼▼ */
         .toast {
-            visibility: hidden; /* 평소엔 숨김 */
+            visibility: hidden;
             min-width: 200px;
-            background-color: rgba(50, 50, 50, 0.9); /* 반투명 검정 */
+            background-color: rgba(50, 50, 50, 0.9);
             color: #fff;
             text-align: center;
-            border-radius: 50px; /* 둥근 알약 모양 */
+            border-radius: 50px;
             padding: 12px 20px;
             position: fixed;
             z-index: 1000;
             left: 50%;
-            bottom: 30px; /* 화면 하단 위치 */
+            bottom: 30px;
             transform: translateX(-50%);
             font-size: 14px;
             font-weight: 500;
@@ -159,7 +160,7 @@
         .toast.show {
             visibility: visible;
             opacity: 1;
-            bottom: 50px; /* 나타날 때 살짝 위로 떠오르는 효과 */
+            bottom: 50px;
         }
 
     </style>
@@ -217,21 +218,15 @@
     const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
     
-    // 버튼
     const btnUndo = document.getElementById('btnUndo');
     const btnRedo = document.getElementById('btnRedo');
     const btnCopy = document.getElementById('btnCopy');
     const btnPaste = document.getElementById('btnPaste');
-
-    // 토스트 메시지 요소
     const toast = document.getElementById('toast');
 
-    // 토스트 함수 (메시지를 보여주고 2.5초 뒤 사라짐)
     function showToast(message) {
         toast.textContent = message;
         toast.classList.add('show');
-        
-        // 2.5초 뒤에 클래스 제거 (사라짐)
         setTimeout(() => {
             toast.classList.remove('show');
         }, 2500);
@@ -247,16 +242,14 @@
         textInput.focus();
     });
 
-    // 전체 복사 (토스트 적용)
     btnCopy.addEventListener('click', () => {
         if (!textInput.value) {
             showToast('복사할 내용이 없습니다.');
             return;
         }
-        
         navigator.clipboard.writeText(textInput.value)
             .then(() => {
-                showToast('클립보드에 복사 완료!'); // 알림창 대신 토스트 실행
+                showToast('클립보드에 복사 완료!');
                 textInput.focus();
             })
             .catch(err => {
@@ -264,7 +257,6 @@
             });
     });
 
-    // 붙여넣기 (토스트 적용)
     btnPaste.addEventListener('click', async () => {
         try {
             const text = await navigator.clipboard.readText();
@@ -272,18 +264,14 @@
                 showToast('붙여넣을 내용이 없습니다.');
                 return;
             }
-
             const start = textInput.selectionStart;
             const end = textInput.selectionEnd;
             const originalText = textInput.value;
-
             textInput.value = originalText.substring(0, start) + text + originalText.substring(end);
             textInput.selectionStart = textInput.selectionEnd = start + text.length;
-            
             updateCounts();
             textInput.focus();
             showToast('붙여넣기 완료!');
-
         } catch (err) {
             alert('브라우저 권한 문제로 붙여넣기에 실패했습니다. Ctrl+V를 이용해주세요.');
         }
@@ -299,10 +287,8 @@
 
     function updateCounts() {
         const text = textInput.value;
-        
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
-        
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);

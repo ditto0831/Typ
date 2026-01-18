@@ -3,17 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>계산기</title>
+    <title>자동 확장 글자수 계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: #f4f4f9;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            align-items: flex-start; /* 내용이 길어지면 스크롤 할 수 있게 위쪽 정렬 */
+            min-height: 100vh;
             margin: 0;
-            overflow: hidden; /* 전체 스크롤 방지 */
+            padding: 40px 20px; /* 위아래 여백 추가 */
+            box-sizing: border-box;
+            overflow-y: auto; /* 전체 페이지 스크롤 허용 */
         }
         .container {
             background-color: white;
@@ -22,38 +24,19 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
             max-width: 700px;
-            height: 90vh; /* 화면 높이의 90% 사용 */
+            /* 고정 높이 제거 */
             display: flex;
-            flex-direction: column; /* 위에서 아래로 배치 */
-            box-sizing: border-box;
+            flex-direction: column;
         }
 
-        /* 입력창 스타일 */
-        textarea {
-            width: 100%;
-            flex: 1; /* 남은 공간을 모두 차지함 (세로 확장) */
-            padding: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            resize: none; /* 사용자 임의 조절 막음 (자동으로 채워지므로) */
-            font-size: 14px; /* 요청하신 14px 유지 */
-            box-sizing: border-box;
-            outline: none;
-            line-height: 1.6;
-            font-family: 'Pretendard', sans-serif;
-            color: #333;
-            margin-top: 15px; /* 통계 박스와의 간격 */
-        }
-        textarea:focus {
-            border-color: #673ab7;
-        }
-        
         /* 통계 컨테이너 */
         .stats-container {
             display: flex;
             flex-direction: column;
             gap: 8px;
-            flex-shrink: 0; /* 공간이 좁아져도 찌그러지지 않음 */
+            margin-bottom: 15px;
+            position: sticky; /* 스크롤 내려도 통계창이 상단에 붙어있게 할지 선택 (여기선 뺌) */
+            top: 0;
         }
 
         .counter-row {
@@ -113,6 +96,27 @@
             color: #673ab7 !important;
             font-weight: 800;
         }
+
+        /* 입력창 스타일 */
+        textarea {
+            width: 100%;
+            min-height: 300px; /* 초기 최소 높이 */
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none; /* 사용자 수동 조절 불가 (자동으로 되니까) */
+            font-size: 14px;
+            box-sizing: border-box;
+            outline: none;
+            line-height: 1.6;
+            font-family: 'Pretendard', sans-serif;
+            color: #333;
+            overflow-y: hidden; /* 내부 스크롤바 숨김 (높이가 늘어나므로) */
+        }
+        textarea:focus {
+            border-color: #673ab7;
+        }
+
     </style>
 </head>
 <body>
@@ -180,12 +184,21 @@
         return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
+    // 높이 자동 조절 함수
+    function autoResize() {
+        textInput.style.height = 'auto'; // 높이를 초기화해서 줄어들 때를 대비
+        textInput.style.height = textInput.scrollHeight + 'px'; // 내용 높이만큼 설정
+    }
+
     function updateCounts() {
         const text = textInput.value;
+        
+        // 통계 업데이트
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
         totalNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
 
+        // 선택 영역 업데이트
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);
@@ -197,11 +210,18 @@
         } else {
             selectionRow.classList.remove('active'); 
         }
+
+        // 높이 조절 실행
+        autoResize();
     }
 
     ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
         textInput.addEventListener(event, updateCounts);
     });
+
+    // 초기 로드 시에도 높이 조절 (붙여넣기 등으로 내용이 있을 경우 대비)
+    autoResize();
+
 </script>
 
 </body>

@@ -46,20 +46,21 @@
             margin-bottom: 15px;
         }
 
-        /* 버튼 그룹 스타일 (새로 추가됨) */
+        /* 버튼 그룹 */
         .btn-group {
             display: flex;
             gap: 5px;
-            margin-right: 10px; /* 통계 정보와 간격 띄우기 */
+            margin-right: 10px;
             padding-right: 15px;
-            border-right: 1px solid #ddd; /* 구분선 */
+            border-right: 1px solid #ddd; 
+            align-items: center;
         }
 
         .icon-btn {
             background: none;
             border: 1px solid transparent;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 4px 6px; /* 패딩 살짝 조절 */
             border-radius: 4px;
             color: #555;
             display: flex;
@@ -84,7 +85,7 @@
             fill: currentColor;
         }
 
-        /* 통계 텍스트 스타일 */
+        /* 통계 텍스트 */
         .stat-group {
             display: flex;
             align-items: center;
@@ -108,7 +109,7 @@
         .selection-group.active { display: flex; }
         .selection-group .val { color: #1565c0; }
 
-        /* 입력창 스타일 */
+        /* 입력창 */
         textarea {
             width: 100%;
             flex: 1;
@@ -147,6 +148,14 @@
             <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Y)">
                 <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
             </button>
+            <div style="width:1px; height:16px; background:#ddd; margin:0 5px;"></div>
+            
+            <button class="icon-btn" id="btnCopy" title="전체 복사">
+                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnPaste" title="붙여넣기">
+                <svg viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>
+            </button>
         </div>
 
         <div class="stat-group">
@@ -169,7 +178,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요. 상단 버튼으로 실행 취소/복구가 가능합니다."></textarea>
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요."></textarea>
     
 </div>
 
@@ -180,21 +189,64 @@
     const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
     
-    // 버튼 요소
+    // 버튼들
     const btnUndo = document.getElementById('btnUndo');
     const btnRedo = document.getElementById('btnRedo');
+    const btnCopy = document.getElementById('btnCopy');
+    const btnPaste = document.getElementById('btnPaste');
 
-    // 기능 1: 실행 취소 (Undo)
+    // 기능: 실행 취소
     btnUndo.addEventListener('click', () => {
         document.execCommand('undo');
-        textInput.focus(); // 버튼 클릭 후 다시 입력창으로 포커스 이동
+        textInput.focus();
     });
 
-    // 기능 2: 다시 실행 (Redo)
+    // 기능: 다시 실행
     btnRedo.addEventListener('click', () => {
         document.execCommand('redo');
         textInput.focus();
     });
+
+    // 기능: 전체 복사
+    btnCopy.addEventListener('click', () => {
+        if (!textInput.value) return; // 내용 없으면 취소
+        
+        navigator.clipboard.writeText(textInput.value)
+            .then(() => {
+                alert('전체 내용이 클립보드에 복사되었습니다!');
+                textInput.focus();
+            })
+            .catch(err => {
+                console.error('복사 실패:', err);
+                alert('복사에 실패했습니다.');
+            });
+    });
+
+    // 기능: 붙여넣기 (보안 권한 필요)
+    btnPaste.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (!text) return;
+
+            // 커서 위치에 텍스트 삽입
+            const start = textInput.selectionStart;
+            const end = textInput.selectionEnd;
+            const originalText = textInput.value;
+
+            // 앞부분 + 붙여넣을 텍스트 + 뒷부분 합치기
+            textInput.value = originalText.substring(0, start) + text + originalText.substring(end);
+            
+            // 커서 위치 조정 (붙여넣은 텍스트 뒤로 이동)
+            textInput.selectionStart = textInput.selectionEnd = start + text.length;
+            
+            updateCounts(); // 숫자 갱신
+            textInput.focus();
+
+        } catch (err) {
+            alert('브라우저 권한 설정 때문에 붙여넣기를 할 수 없습니다.\n키보드의 [Ctrl + V]를 사용해주세요.');
+        }
+    });
+
 
     function estimateTokens(text) {
         if (!text) return 0;
@@ -222,7 +274,6 @@
         }
     }
 
-    // 이벤트 리스너 (화면 흔들림 없음)
     ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
         textInput.addEventListener(event, updateCounts);
     });

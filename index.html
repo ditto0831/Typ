@@ -3,17 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>10000자 에디터</title>
+    <title>10000자 에디터 (Pro)</title>
     <style>
-        /* 화면 전체 레이아웃 고정 */
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
             background-color: #f4f4f9;
             margin: 0;
             padding: 20px;
             box-sizing: border-box;
-            height: 100vh; /* 화면 전체 높이 사용 */
-            overflow: hidden; /* 브라우저 전체 스크롤 막음 (입력창 내부 스크롤 사용) */
+            height: 100vh;
+            overflow: hidden;
             display: flex;
             justify-content: center;
         }
@@ -24,16 +23,16 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 800px; /* 폭을 넓혀서 장문 작성에 유리하게 */
-            height: 100%; /* 부모 높이(화면 전체) 채우기 */
+            max-width: 800px;
+            height: 100%;
             display: flex;
-            flex-direction: column; /* 상단바 - 입력창 수직 배치 */
+            flex-direction: column;
             box-sizing: border-box;
         }
 
-        /* 상단 통계 바 (고정) */
+        /* 상단 통계 바 */
         .status-bar {
-            flex-shrink: 0; /* 크기 줄어들지 않음 */
+            flex-shrink: 0;
             display: flex;
             align-items: center;
             background-color: #f8f9fa;
@@ -47,6 +46,45 @@
             margin-bottom: 15px;
         }
 
+        /* 버튼 그룹 스타일 (새로 추가됨) */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-right: 10px; /* 통계 정보와 간격 띄우기 */
+            padding-right: 15px;
+            border-right: 1px solid #ddd; /* 구분선 */
+        }
+
+        .icon-btn {
+            background: none;
+            border: 1px solid transparent;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .icon-btn:hover {
+            background-color: #e9ecef;
+            color: #333;
+        }
+
+        .icon-btn:active {
+            background-color: #dee2e6;
+            transform: translateY(1px);
+        }
+
+        .icon-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* 통계 텍스트 스타일 */
         .stat-group {
             display: flex;
             align-items: center;
@@ -70,41 +108,30 @@
         .selection-group.active { display: flex; }
         .selection-group .val { color: #1565c0; }
 
-        /* 입력창 스타일 (핵심 변경) */
+        /* 입력창 스타일 */
         textarea {
             width: 100%;
-            flex: 1; /* 남은 공간을 모두 차지함 */
+            flex: 1;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            resize: none; /* 크기 조절 핸들 제거 */
+            resize: none;
             font-size: 14px;
             box-sizing: border-box;
             outline: none;
             line-height: 1.6;
             font-family: 'Pretendard', sans-serif;
             color: #333;
-            overflow-y: auto; /* 내용 많으면 내부 스크롤 생성 */
+            overflow-y: auto;
         }
         textarea:focus {
             border-color: #673ab7;
         }
 
-        /* 스크롤바 디자인 (크롬/엣지) - 깔끔하게 */
-        textarea::-webkit-scrollbar {
-            width: 10px;
-        }
-        textarea::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 8px;
-        }
-        textarea::-webkit-scrollbar-thumb {
-            background: #ccc; 
-            border-radius: 8px;
-        }
-        textarea::-webkit-scrollbar-thumb:hover {
-            background: #bbb; 
-        }
+        textarea::-webkit-scrollbar { width: 10px; }
+        textarea::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
+        textarea::-webkit-scrollbar-thumb { background: #ccc; border-radius: 8px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: #bbb; }
 
     </style>
 </head>
@@ -113,6 +140,15 @@
 <div class="container">
     
     <div class="status-bar">
+        <div class="btn-group">
+            <button class="icon-btn" id="btnUndo" title="실행 취소 (Ctrl+Z)">
+                <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+            </button>
+            <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Y)">
+                <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
+            </button>
+        </div>
+
         <div class="stat-group">
             <span class="label" style="color:#673ab7;">AI 토큰</span>
             <span class="val token-val" id="totalToken">0</span>
@@ -123,19 +159,17 @@
         <div class="stat-group">
             <span class="label">전체</span>
             <span class="val"><span id="totalChar">0</span>자</span>
-            <span style="color:#aaa; font-size:11px;">(공제 <span id="totalNoSpace">0</span>)</span>
         </div>
 
         <div class="selection-group" id="selectionGroup">
             <div class="stat-group">
                 <span class="label" style="color:#1565c0;">선택</span>
                 <span class="val"><span id="selectChar">0</span>자</span>
-                <span style="color:#64b5f6; font-size:11px;">(공제 <span id="selectNoSpace">0</span>)</span>
             </div>
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요. 10,000자 이상의 긴 글도 안정적으로 작성할 수 있습니다."></textarea>
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요. 상단 버튼으로 실행 취소/복구가 가능합니다."></textarea>
     
 </div>
 
@@ -143,10 +177,24 @@
     const textInput = document.getElementById('textInput');
     const totalToken = document.getElementById('totalToken');
     const totalChar = document.getElementById('totalChar');
-    const totalNoSpace = document.getElementById('totalNoSpace');
     const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
-    const selectNoSpace = document.getElementById('selectNoSpace');
+    
+    // 버튼 요소
+    const btnUndo = document.getElementById('btnUndo');
+    const btnRedo = document.getElementById('btnRedo');
+
+    // 기능 1: 실행 취소 (Undo)
+    btnUndo.addEventListener('click', () => {
+        document.execCommand('undo');
+        textInput.focus(); // 버튼 클릭 후 다시 입력창으로 포커스 이동
+    });
+
+    // 기능 2: 다시 실행 (Redo)
+    btnRedo.addEventListener('click', () => {
+        document.execCommand('redo');
+        textInput.focus();
+    });
 
     function estimateTokens(text) {
         if (!text) return 0;
@@ -156,16 +204,12 @@
         return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
-    // 더 이상 높이 조절 함수(autoResize)가 필요 없습니다.
-    // 입력창이 이미 꽉 차있기 때문입니다.
-
     function updateCounts() {
         const text = textInput.value;
         
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
-        totalNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
-
+        
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);
@@ -173,13 +217,12 @@
         if (selectedText.length > 0) {
             selectionGroup.classList.add('active');
             selectChar.textContent = selectedText.length.toLocaleString();
-            selectNoSpace.textContent = selectedText.replace(/\s/g, '').length.toLocaleString();
         } else {
             selectionGroup.classList.remove('active');
         }
     }
 
-    // 모든 이벤트에서 계산만 수행 (화면 흔들림 원천 차단)
+    // 이벤트 리스너 (화면 흔들림 없음)
     ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
         textInput.addEventListener(event, updateCounts);
     });

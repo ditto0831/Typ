@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>심플 글자수 계산기</title>
+    <title>고급 글자수 계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -26,6 +26,7 @@
             margin-top: 0;
             color: #333;
             text-align: center;
+            margin-bottom: 20px;
         }
         textarea {
             width: 100%;
@@ -33,34 +34,68 @@
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            resize: vertical; /* 세로 크기 조절 가능 */
+            resize: vertical;
             font-size: 16px;
-            box-sizing: border-box; /* 패딩 포함 크기 계산 */
+            box-sizing: border-box;
             outline: none;
+            line-height: 1.5;
         }
         textarea:focus {
             border-color: #4a90e2;
         }
-        .counter-box {
-            display: flex;
-            justify-content: space-around;
+        
+        /* 통계 박스 스타일 */
+        .stats-container {
             margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .counter-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background-color: #f8f9fa;
-            padding: 15px;
+            padding: 12px 20px;
             border-radius: 8px;
         }
-        .count-item {
-            text-align: center;
+        
+        /* 선택된 영역 강조 스타일 */
+        .counter-row.selection {
+            background-color: #e3f2fd; /* 선택 시 파란색 톤 배경 */
+            border: 1px solid #bbdefb;
+            display: none; /* 기본적으로는 숨김 */
         }
-        .count-item span {
-            display: block;
+        .counter-row.selection.active {
+            display: flex; /* 선택 시 보임 */
+        }
+
+        .row-label {
+            font-weight: bold;
+            color: #555;
             font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
+            width: 80px;
+        }
+
+        .count-group {
+            display: flex;
+            gap: 20px;
+            text-align: right;
+        }
+        
+        .count-item span {
+            font-size: 12px;
+            color: #888;
+            margin-right: 4px;
         }
         .count-item strong {
-            font-size: 24px;
-            color: #4a90e2;
+            font-size: 18px;
+            color: #333;
+        }
+        /* 선택된 글자수 색상 강조 */
+        .selection .count-item strong {
+            color: #1976d2;
         }
     </style>
 </head>
@@ -68,34 +103,79 @@
 
 <div class="container">
     <h2>글자수 계산기</h2>
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하거나 붙여넣기 하세요."></textarea>
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요. 텍스트를 드래그하면 선택된 부분의 글자수가 나타납니다."></textarea>
     
-    <div class="counter-box">
-        <div class="count-item">
-            <span>공백 포함</span>
-            <strong id="charCount">0</strong>자
+    <div class="stats-container">
+        <div class="counter-row">
+            <div class="row-label">전체 문서</div>
+            <div class="count-group">
+                <div class="count-item">
+                    <span>공백 포함</span>
+                    <strong id="totalChar">0</strong>
+                </div>
+                <div class="count-item">
+                    <span>공백 제외</span>
+                    <strong id="totalNoSpace">0</strong>
+                </div>
+            </div>
         </div>
-        <div class="count-item">
-            <span>공백 제외</span>
-            <strong id="charCountNoSpace">0</strong>자
+
+        <div class="counter-row selection" id="selectionRow">
+            <div class="row-label">선택 영역</div>
+            <div class="count-group">
+                <div class="count-item">
+                    <span>공백 포함</span>
+                    <strong id="selectChar">0</strong>
+                </div>
+                <div class="count-item">
+                    <span>공백 제외</span>
+                    <strong id="selectNoSpace">0</strong>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
     const textInput = document.getElementById('textInput');
-    const charCount = document.getElementById('charCount');
-    const charCountNoSpace = document.getElementById('charCountNoSpace');
+    
+    // 전체 카운터 요소
+    const totalChar = document.getElementById('totalChar');
+    const totalNoSpace = document.getElementById('totalNoSpace');
 
-    textInput.addEventListener('input', function() {
-        const text = this.value;
+    // 선택 카운터 요소
+    const selectionRow = document.getElementById('selectionRow');
+    const selectChar = document.getElementById('selectChar');
+    const selectNoSpace = document.getElementById('selectNoSpace');
 
-        // 1. 공백 포함 글자 수
-        charCount.textContent = text.length;
+    // 공통 계산 함수
+    function updateCounts() {
+        const text = textInput.value;
+        
+        // 1. 전체 글자수 업데이트
+        totalChar.textContent = text.length;
+        totalNoSpace.textContent = text.replace(/\s/g, '').length;
 
-        // 2. 공백 제외 글자 수 (정규식으로 모든 공백 제거 후 길이 측정)
-        const textWithoutSpace = text.replace(/\s/g, ''); 
-        charCountNoSpace.textContent = textWithoutSpace.length;
+        // 2. 선택된 영역 글자수 업데이트
+        const start = textInput.selectionStart;
+        const end = textInput.selectionEnd;
+        const selectedText = text.substring(start, end);
+
+        if (selectedText.length > 0) {
+            selectionRow.classList.add('active'); // 박스 보이기
+            selectChar.textContent = selectedText.length;
+            selectNoSpace.textContent = selectedText.replace(/\s/g, '').length;
+        } else {
+            selectionRow.classList.remove('active'); // 박스 숨기기
+        }
+    }
+
+    // 감지해야 할 이벤트들
+    // input: 타이핑 할 때
+    // click, mouseup: 마우스로 드래그 끝냈을 때
+    // keyup: Shift + 화살표로 선택했을 때
+    ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
+        textInput.addEventListener(event, updateCounts);
     });
 </script>
 

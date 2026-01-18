@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI 토큰 & 글자수 계산기</title>
+    <title>AI 토큰 & 글자수 계산기 (Compact)</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -20,38 +20,45 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 650px; /* 폭을 조금 더 넓힘 */
+            max-width: 650px;
         }
         h2 {
             margin-top: 0;
             color: #333;
             text-align: center;
             margin-bottom: 20px;
+            font-size: 22px; /* 제목 크기도 약간 조정 */
         }
         .token-badge {
             background-color: #673ab7;
             color: white;
-            padding: 4px 10px;
+            padding: 3px 8px;
             border-radius: 20px;
-            font-size: 12px;
+            font-size: 11px;
             vertical-align: middle;
             margin-left: 8px;
+            font-weight: normal;
         }
         textarea {
             width: 100%;
-            height: 250px; /* 높이를 조금 늘림 */
+            height: 250px;
             padding: 15px;
             border: 1px solid #ddd;
             border-radius: 8px;
             resize: vertical;
-            font-size: 16px;
+            
+            /* ▼▼▼ 여기를 수정했습니다 (16px -> 14px) ▼▼▼ */
+            font-size: 14px; 
+            /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+            
             box-sizing: border-box;
             outline: none;
             line-height: 1.6;
             font-family: 'Pretendard', sans-serif;
+            color: #333;
         }
         textarea:focus {
-            border-color: #673ab7; /* AI 느낌의 보라색 포인트 */
+            border-color: #673ab7;
         }
         
         .stats-container {
@@ -66,13 +73,12 @@
             justify-content: space-between;
             align-items: center;
             background-color: #f8f9fa;
-            padding: 15px 20px;
+            padding: 12px 18px; /* 패딩을 살짝 줄임 */
             border-radius: 8px;
         }
         
-        /* 토큰 박스 강조 */
         .token-box {
-            background-color: #ede7f6; /* 연한 보라색 배경 */
+            background-color: #ede7f6;
             border: 1px solid #d1c4e9;
         }
 
@@ -88,7 +94,7 @@
         .row-label {
             font-weight: bold;
             color: #555;
-            font-size: 15px;
+            font-size: 14px; /* 라벨 폰트 조정 */
             min-width: 80px;
         }
 
@@ -105,16 +111,15 @@
         }
 
         .count-item span {
-            font-size: 12px;
+            font-size: 11px; /* 설명 폰트 조정 */
             color: #888;
             margin-bottom: 2px;
         }
         .count-item strong {
-            font-size: 18px;
+            font-size: 16px; /* 숫자 폰트 조정 (18px -> 16px) */
             color: #333;
         }
 
-        /* 토큰 숫자 강조 */
         .token-text {
             color: #673ab7 !important;
             font-weight: 800;
@@ -125,7 +130,7 @@
 
 <div class="container">
     <h2>글자수 & 토큰 계산기 <span class="token-badge">AI Ready</span></h2>
-    <textarea id="textInput" placeholder="이곳에 프롬프트나 내용을 입력하세요."></textarea>
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요."></textarea>
     
     <div class="stats-container">
         
@@ -171,8 +176,6 @@
 
 <script>
     const textInput = document.getElementById('textInput');
-    
-    // 요소 가져오기
     const totalToken = document.getElementById('totalToken');
     const totalChar = document.getElementById('totalChar');
     const totalNoSpace = document.getElementById('totalNoSpace');
@@ -180,39 +183,20 @@
     const selectChar = document.getElementById('selectChar');
     const selectNoSpace = document.getElementById('selectNoSpace');
 
-    // 토큰 계산 함수 (근사치 알고리즘)
     function estimateTokens(text) {
         if (!text) return 0;
-        
-        // 1. 한글/한자 등 (CJK) 추출
-        // 한글은 보통 1글자가 1~2토큰 사이지만, 최신 모델(GPT-4o, Gemini 1.5)은 효율이 좋아져서
-        // 1글자당 약 1.1~1.2 토큰 정도로 잡는 것이 안전합니다.
         const cjkMatch = text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g);
         const cjkCount = cjkMatch ? cjkMatch.length : 0;
-        
-        // 2. 그 외 (영어, 숫자, 기호, 공백)
-        // 영어는 보통 4글자가 1토큰 (0.25)
         const otherCount = text.length - cjkCount;
-        
-        // 계산식: (한글 * 1.1) + (영어 * 0.25)
-        // 반올림하여 정수로 반환
-        const tokenEstimate = Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
-        
-        return tokenEstimate;
+        return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
     }
 
-    // 업데이트 함수
     function updateCounts() {
         const text = textInput.value;
-        
-        // 1. 토큰 업데이트 (전체 텍스트 기준)
         totalToken.textContent = estimateTokens(text).toLocaleString();
-
-        // 2. 전체 글자수 업데이트
         totalChar.textContent = text.length.toLocaleString();
         totalNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
 
-        // 3. 선택된 영역 글자수 업데이트
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);

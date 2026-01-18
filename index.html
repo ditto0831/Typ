@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>심플 라인 계산기</title>
+    <title>Sticky 라인 계산기</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -23,24 +23,32 @@
             border-radius: 12px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 750px; /* 가로폭을 살짝 더 넓혀서 한 줄 표시가 원활하게 함 */
+            max-width: 750px;
             display: flex;
             flex-direction: column;
+            position: relative; /* 자식 요소 위치 기준 */
         }
 
-        /* ▼▼▼ 핵심 변경: 한 줄 통계 바 스타일 ▼▼▼ */
+        /* ▼▼▼ 상단바 고정(Sticky) 설정 ▼▼▼ */
         .status-bar {
+            position: sticky; /* 스크롤 시 고정되는 속성 */
+            top: 0;           /* 화면 최상단에 붙음 */
+            z-index: 100;     /* 글자보다 위에 오도록 순서 지정 */
+            
             display: flex;
             align-items: center;
-            background-color: #f8f9fa;
+            background-color: #f8f9fa; /* 배경색 필수 (투명하면 글자가 비침) */
             border: 1px solid #e9ecef;
             border-radius: 8px;
             padding: 8px 15px;
-            font-size: 12px; /* 폰트 사이즈 작게 */
+            font-size: 12px;
             color: #555;
-            flex-wrap: wrap; /* 화면이 너무 좁으면 줄바꿈 허용 */
-            gap: 15px; /* 항목 간 간격 */
+            flex-wrap: wrap;
+            gap: 15px;
             margin-bottom: 15px;
+            
+            /* 고정되었을 때 그림자를 줘서 떠있는 느낌 주기 */
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
         }
 
         .stat-group {
@@ -60,28 +68,25 @@
             color: #333;
         }
 
-        /* 구분선 */
         .divider {
             width: 1px;
             height: 12px;
             background-color: #ccc;
         }
 
-        /* 토큰 강조 */
         .token-val {
             color: #673ab7;
             font-weight: 800;
         }
 
-        /* 선택 영역 (평소엔 숨김) */
         .selection-group {
-            display: none; /* 기본 숨김 */
+            display: none;
             align-items: center;
             gap: 15px;
-            background-color: #e3f2fd; /* 선택 시 배경색 */
+            background-color: #e3f2fd;
             padding: 2px 8px;
             border-radius: 4px;
-            margin-left: auto; /* 우측 정렬 */
+            margin-left: auto;
         }
         .selection-group.active {
             display: flex;
@@ -90,10 +95,9 @@
             color: #1565c0;
         }
 
-        /* 입력창 스타일 */
         textarea {
             width: 100%;
-            min-height: 400px; /* 기본 높이를 좀 더 시원하게 */
+            min-height: 400px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 8px;
@@ -139,7 +143,7 @@
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="내용을 입력하세요."></textarea>
+    <textarea id="textInput" placeholder="내용을 입력하세요. 스크롤을 내려도 상단바가 따라옵니다."></textarea>
     
 </div>
 
@@ -148,8 +152,6 @@
     const totalToken = document.getElementById('totalToken');
     const totalChar = document.getElementById('totalChar');
     const totalNoSpace = document.getElementById('totalNoSpace');
-    
-    // 선택 영역 그룹
     const selectionGroup = document.getElementById('selectionGroup');
     const selectChar = document.getElementById('selectChar');
     const selectNoSpace = document.getElementById('selectNoSpace');
@@ -170,22 +172,20 @@
     function updateCounts() {
         const text = textInput.value;
         
-        // 전체 통계
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
         totalNoSpace.textContent = text.replace(/\s/g, '').length.toLocaleString();
 
-        // 선택 영역 통계
         const start = textInput.selectionStart;
         const end = textInput.selectionEnd;
         const selectedText = text.substring(start, end);
 
         if (selectedText.length > 0) {
-            selectionGroup.classList.add('active'); // 보이게 하기
+            selectionGroup.classList.add('active');
             selectChar.textContent = selectedText.length.toLocaleString();
             selectNoSpace.textContent = selectedText.replace(/\s/g, '').length.toLocaleString();
         } else {
-            selectionGroup.classList.remove('active'); // 숨기기
+            selectionGroup.classList.remove('active');
         }
 
         autoResize();
@@ -196,7 +196,6 @@
     });
 
     autoResize();
-
 </script>
 
 </body>

@@ -15,7 +15,7 @@
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background-color: #f0f2f5; /* 배경색을 조금 더 구분되게 변경 */
+            background-color: #f0f2f5;
             margin: 0;
             padding: 0;
             height: 100vh;
@@ -24,15 +24,15 @@
             flex-direction: column;
         }
 
-        /* === 상단 탭 네비게이션 (인덱스) === */
+        /* === 상단 탭 네비게이션 === */
         .top-nav {
             height: 45px;
             background-color: #e9ecef;
             display: flex;
-            align-items: flex-end; /* 탭이 바닥에 붙도록 */
+            align-items: flex-end;
             padding: 0 10px;
-            overflow-x: auto; /* 탭 많아지면 스크롤 */
-            flex-shrink: 0; /* 높이 줄어들지 않음 */
+            overflow-x: auto;
+            flex-shrink: 0;
             border-bottom: 1px solid #ccc;
             gap: 2px;
         }
@@ -71,7 +71,6 @@
             z-index: 10;
         }
 
-        /* 탭 닫기 버튼 (x) */
         .tab-close {
             margin-left: 8px;
             font-size: 10px;
@@ -94,9 +93,9 @@
         .add-tab-btn:hover { color: #1565c0; background-color: rgba(0,0,0,0.05); border-radius: 4px; }
 
 
-        /* === 에디터 영역 (탭 아래 꽉 차게) === */
+        /* === 에디터 영역 === */
         .editor-container {
-            flex: 1; /* 남은 공간 다 차지 */
+            flex: 1;
             position: relative;
             background-color: white;
             width: 100%;
@@ -133,7 +132,6 @@
             background-color: white;
         }
         
-        /* 마크다운 스타일 */
         #markdownPreview h1, #markdownPreview h2, #markdownPreview h3 { border-bottom: 1px solid #eee; padding-bottom: 0.3em; margin-top: 1.5em; }
         #markdownPreview blockquote { border-left: 4px solid #ddd; padding-left: 1em; color: #666; margin: 1em 0; }
         #markdownPreview code { background: #f4f4f4; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
@@ -143,22 +141,23 @@
         /* === 플로팅 패널 === */
         .floating-panel {
             position: absolute;
-            top: 20px; right: 20px; width: 260px;
+            top: 20px; right: 20px; width: 270px; /* 폭을 약간 넓힘 */
             background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             display: flex; flex-direction: column; z-index: 100;
             transition: opacity 0.3s ease;
+            max-height: 80vh; /* 화면보다 너무 길어지지 않게 */
         }
         .floating-panel.faded { opacity: 0.2; }
         .floating-panel:hover { opacity: 1 !important; }
-        .panel-header { height: 28px; background-color: #f1f3f5; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; cursor: grab; user-select: none; }
-        .panel-content { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .floating-panel.minimized { height: 28px; width: 120px; opacity: 0.7; }
+        .panel-header { height: 28px; background-color: #f1f3f5; border-bottom: 1px solid #e9ecef; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; cursor: grab; user-select: none; flex-shrink: 0; }
+        .panel-content { padding: 12px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; } /* 패널 내부 스크롤 가능 */
+        .floating-panel.minimized { height: 28px; width: 120px; opacity: 0.7; overflow: hidden; }
         .floating-panel.minimized .panel-content { display: none; }
 
-        .panel-row { display: flex; justify-content: space-between; align-items: center; }
+        .panel-row { display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
         .btn-group { display: flex; gap: 4px; }
         .icon-btn { background: transparent; border: 1px solid transparent; cursor: pointer; padding: 6px; border-radius: 6px; color: #555; display: flex; align-items: center; justify-content: center; }
         .icon-btn:hover { background-color: rgba(0,0,0,0.05); color: #000; }
@@ -166,8 +165,10 @@
         .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
         .sep { width: 1px; height: 14px; background: #ddd; margin: 0 4px; }
         
-        .stats-info { font-size: 12px; color: #666; display: flex; flex-direction: column; gap: 4px; background-color: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; }
+        .stats-info { font-size: 12px; color: #666; display: flex; flex-direction: column; gap: 4px; background-color: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px; flex-shrink: 0; }
         .stat-line { display: flex; justify-content: space-between; }
+        
+        /* 특수문자 팔레트 */
         .symbol-palette { display: none; grid-template-columns: repeat(6, 1fr); gap: 4px; background-color: #f8f9fa; padding: 8px; border-radius: 8px; margin-top: 5px; border: 1px solid #eee; }
         .symbol-palette.show { display: grid; }
         .sym-btn { background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; padding: 6px 0; font-size: 14px; color: #333; }
@@ -233,162 +234,102 @@
     const btnAddTab = document.getElementById('btnAddTab');
     const toast = document.getElementById('toast');
     
-    // 상태 관리 변수
-    let pages = []; // 페이지들을 담을 배열 { title: "이름", content: "내용" }
-    let curPageIndex = 0; // 현재 보고 있는 페이지 번호
+    let pages = [];
+    let curPageIndex = 0;
     let isPreviewMode = false;
-    const STORAGE_KEY = 'my_editor_pages_v2'; // 키 값 변경 (구조가 바뀜)
+    const STORAGE_KEY = 'my_editor_pages_v2';
 
-    // === 1. 초기화 및 데이터 마이그레이션 ===
+    // === 초기화 ===
     function init() {
         const savedData = localStorage.getItem(STORAGE_KEY);
-        
         if (savedData) {
-            // 저장된 데이터가 있으면 불러옴
             try {
                 const parsed = JSON.parse(savedData);
-                if (Array.isArray(parsed)) {
-                    pages = parsed;
-                } else {
-                    // 구 버전 데이터가 들어있을 경우 대비
-                    pages = [{ title: '프로젝트 1', content: '' }];
-                }
-            } catch (e) {
-                pages = [{ title: '프로젝트 1', content: '' }];
-            }
+                if (Array.isArray(parsed)) pages = parsed;
+                else pages = [{ title: '프로젝트 1', content: '' }];
+            } catch (e) { pages = [{ title: '프로젝트 1', content: '' }]; }
         } else {
-            // 저장된게 없는데, 만약 '싱글 페이지 버전' 데이터가 남아있다면?
             const oldData = localStorage.getItem('my_editor_content_v1');
-            if (oldData) {
-                pages = [{ title: '기존 내용', content: oldData }];
-                showToast('기존 데이터를 새 페이지로 옮겼습니다.');
-            } else {
-                pages = [{ title: '프로젝트 1', content: '' }];
-            }
+            pages = oldData ? [{ title: '기존 내용', content: oldData }] : [{ title: '프로젝트 1', content: '' }];
         }
-        
         curPageIndex = 0;
         renderTabs();
         loadPage(curPageIndex);
     }
 
-    // === 2. 탭(페이지) 관리 로직 ===
-    
-    // 탭 UI 그리기
+    // === 탭 관리 ===
     function renderTabs() {
-        // 기존 탭들(버튼 제외) 제거
-        const existingTabs = document.querySelectorAll('.tab-item');
-        existingTabs.forEach(el => el.remove());
-
+        document.querySelectorAll('.tab-item').forEach(el => el.remove());
         pages.forEach((page, index) => {
             const tab = document.createElement('div');
             tab.className = `tab-item ${index === curPageIndex ? 'active' : ''}`;
-            tab.innerHTML = `
-                <span class="tab-title">${page.title}</span>
-                ${pages.length > 1 ? '<span class="tab-close">×</span>' : ''} 
-            `;
+            tab.innerHTML = `<span class="tab-title">${page.title}</span>${pages.length > 1 ? '<span class="tab-close">×</span>' : ''}`;
             
-            // 탭 클릭: 페이지 전환
             tab.addEventListener('click', (e) => {
-                if(e.target.classList.contains('tab-close')) return; // 닫기 버튼이면 무시
+                if(e.target.classList.contains('tab-close')) return;
                 switchPage(index);
             });
 
-            // 탭 더블클릭: 이름 변경
             tab.addEventListener('dblclick', () => {
                 const newTitle = prompt('프로젝트 이름을 입력하세요:', page.title);
                 if (newTitle && newTitle.trim() !== "") {
                     pages[index].title = newTitle;
-                    saveAll();
-                    renderTabs();
+                    saveAll(); renderTabs();
                 }
             });
 
-            // 닫기 버튼 클릭: 페이지 삭제
             const closeBtn = tab.querySelector('.tab-close');
             if (closeBtn) {
                 closeBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 탭 클릭 이벤트 전파 막기
-                    if (confirm(`'${page.title}' 페이지를 삭제하시겠습니까?`)) {
-                        deletePage(index);
-                    }
+                    e.stopPropagation();
+                    if (confirm(`'${page.title}' 페이지를 삭제하시겠습니까?`)) deletePage(index);
                 });
             }
-
             topNav.insertBefore(tab, btnAddTab);
         });
     }
 
-    // 페이지 전환
     function switchPage(index) {
-        // 현재 내용 저장
         pages[curPageIndex].content = textInput.value;
-        
         curPageIndex = index;
         loadPage(index);
         renderTabs();
-        saveAll(); // 전환 시 자동 저장
-        
-        // 미리보기 모드였다면 갱신
+        saveAll();
         if (isPreviewMode) updatePreview();
     }
 
-    // 에디터에 내용 뿌리기
     function loadPage(index) {
         textInput.value = pages[index].content;
         updateCounts();
     }
 
-    // 새 페이지 추가
     btnAddTab.addEventListener('click', () => {
-        // 현재 내용 저장
         pages[curPageIndex].content = textInput.value;
-        
-        const newTitle = `프로젝트 ${pages.length + 1}`;
-        pages.push({ title: newTitle, content: '' });
-        
-        curPageIndex = pages.length - 1; // 새 페이지로 이동
-        renderTabs();
-        loadPage(curPageIndex);
-        saveAll();
-        
-        // 스크롤을 맨 오른쪽으로
+        pages.push({ title: `프로젝트 ${pages.length + 1}`, content: '' });
+        curPageIndex = pages.length - 1;
+        renderTabs(); loadPage(curPageIndex); saveAll();
         setTimeout(() => topNav.scrollTo(topNav.scrollWidth, 0), 100);
     });
 
-    // 페이지 삭제
     function deletePage(index) {
         pages.splice(index, 1);
-        
-        // 인덱스 조정 (지운게 현재페이지거나 앞이면)
-        if (curPageIndex >= pages.length) {
-            curPageIndex = pages.length - 1;
-        }
-        
-        renderTabs();
-        loadPage(curPageIndex);
-        saveAll();
+        if (curPageIndex >= pages.length) curPageIndex = pages.length - 1;
+        renderTabs(); loadPage(curPageIndex); saveAll();
     }
 
-    // 전체 데이터 저장 (로컬스토리지)
     function saveAll() {
-        // 현재 작성중인 내용도 배열에 반영
         pages[curPageIndex].content = textInput.value;
         localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
     }
 
-
-    // === 3. 기존 기능들 연동 ===
-
-    // 입력 시 저장 및 카운트
+    // === 기능 연동 ===
     textInput.addEventListener('input', () => {
-        pages[curPageIndex].content = textInput.value; // 실시간 배열 동기화
+        pages[curPageIndex].content = textInput.value;
         document.getElementById('floatingPanel').classList.add('faded');
         updateCounts();
-        saveAll(); // 로컬스토리지 저장
+        saveAll();
     });
 
-    // 마크다운 미리보기
     const btnPreview = document.getElementById('btnPreview');
     btnPreview.addEventListener('click', () => {
         if (!isPreviewMode) {
@@ -406,81 +347,49 @@
         isPreviewMode = !isPreviewMode;
     });
 
-    function updatePreview() {
-        markdownPreview.innerHTML = marked.parse(textInput.value);
-    }
+    function updatePreview() { markdownPreview.innerHTML = marked.parse(textInput.value); }
 
-    // JSON 내보내기 (구조 변경)
     document.getElementById('btnSaveJson').addEventListener('click', () => {
-        pages[curPageIndex].content = textInput.value; // 확실히 하기 위해
-        const data = {
-            version: 2,
-            exportedAt: new Date().toLocaleString(),
-            pages: pages
-        };
+        pages[curPageIndex].content = textInput.value;
+        const data = { version: 2, exportedAt: new Date().toLocaleString(), pages: pages };
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
         const ts = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"");
         a.download = `Projects_Backup_${ts}.json`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
         showToast('전체 프로젝트 저장 완료');
     });
 
-    // JSON 불러오기
     const fileInput = document.getElementById('fileInput');
     document.getElementById('btnLoadJson').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (!confirm("현재 모든 프로젝트 내용이 파일 내용으로 교체됩니다.\n계속하시겠습니까?")) { fileInput.value=''; return; }
-        
+        if (!confirm("현재 내용이 교체됩니다. 계속하시겠습니까?")) { fileInput.value=''; return; }
         const reader = new FileReader();
         reader.onload = function(evt) {
             try {
                 const data = JSON.parse(evt.target.result);
-                
-                // 버전 2 (다중 페이지) 파일인 경우
                 if (data.pages && Array.isArray(data.pages)) {
-                    pages = data.pages;
-                    curPageIndex = 0;
-                    renderTabs();
-                    loadPage(0);
-                    saveAll();
-                    showToast('프로젝트 목록을 불러왔습니다.');
-                } 
-                // 버전 1 (단일 페이지) 파일인 경우 호환성 유지
-                else if (data.content !== undefined) {
+                    pages = data.pages; curPageIndex = 0;
+                    renderTabs(); loadPage(0); saveAll(); showToast('불러오기 완료');
+                } else if (data.content !== undefined) {
                     pages.push({ title: '불러온 파일', content: data.content });
                     curPageIndex = pages.length - 1;
-                    renderTabs();
-                    loadPage(curPageIndex);
-                    saveAll();
-                    showToast('파일을 새 프로젝트 탭으로 추가했습니다.');
-                }
-                else { alert('형식 오류'); }
+                    renderTabs(); loadPage(curPageIndex); saveAll(); showToast('추가 완료');
+                } else alert('형식 오류');
             } catch(e) { alert('파일 오류'); }
         };
         reader.readAsText(file); fileInput.value='';
     });
 
-    // 기타 UI 기능들 (드래그, 카운트, 특수문자 등)
-    // ... (기존과 동일한 로직, 간략화) ...
-    
-    // 토스트 메시지
-    function showToast(msg) {
-        toast.textContent = msg; toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2500);
-    }
-
-    // 패널 최소화/투명화
+    // === UI 기능 ===
     const panel = document.getElementById('floatingPanel');
     const btnMinimize = document.getElementById('btnMinimize');
     let typeTimer;
     textInput.addEventListener('keyup', () => { clearTimeout(typeTimer); typeTimer = setTimeout(() => { panel.classList.remove('faded'); }, 800); });
     btnMinimize.addEventListener('click', () => { panel.classList.toggle('minimized'); btnMinimize.textContent = panel.classList.contains('minimized') ? '□' : '_'; });
 
-    // 드래그 기능
     let isDragging=false, startX, startY, iL, iT;
     const dragHandle = document.getElementById('dragHandle');
     function sD(e) { if(e.target.closest('.minimize-btn'))return; isDragging=true; const c=e.touches?e.touches[0]:e; startX=c.clientX; startY=c.clientY; const r=panel.getBoundingClientRect(); iL=r.left; iT=r.top; panel.style.right='auto'; panel.style.left=iL+'px'; panel.style.top=iT+'px'; }
@@ -489,14 +398,22 @@
     dragHandle.addEventListener('mousedown', sD); document.addEventListener('mousemove', dD); document.addEventListener('mouseup', eD);
     dragHandle.addEventListener('touchstart', sD, {passive:false}); document.addEventListener('touchmove', dD, {passive:false}); document.addEventListener('touchend', eD);
 
-    // 특수문자
-    const symbols = ['# ','- ','**','> ','```','[]()','⚠️','✅','❌','「','」','『','』','×','÷'];
+    // === 특수문자 업데이트 (요청사항 반영) ===
+    const symbols = [
+        '# ', '- ', '**', '> ', '```', '[]()',
+        '→', '←', '↔', '×', '÷', 
+        '「', '」', '『', '』',
+        '🤫', 'ⓤ', 'ⓒ', 
+        '✅', '❌', '⚠️', '🔥', '💦', '💤',
+        '📕', '📙', '📗', '📘',
+        '💋', '🫦'
+    ];
+    
     const sp = document.getElementById('symbolPalette');
     symbols.forEach(c=>{const b=document.createElement('button');b.className='sym-btn';b.textContent=c;b.onclick=()=>iSym(c);sp.appendChild(b);});
     document.getElementById('btnSymbol').onclick=()=>{if(!panel.classList.contains('minimized'))sp.classList.toggle('show');};
     function iSym(c){if(isPreviewMode)return; const s=textInput.selectionStart,e=textInput.selectionEnd,v=textInput.value; textInput.value=v.substring(0,s)+c+v.substring(e); textInput.selectionStart=textInput.selectionEnd=s+c.length; textInput.focus(); updateCounts(); saveAll();}
 
-    // 카운트
     function updateCounts() {
         const t=textInput.value;
         const cjk=(t.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g)||[]).length;
@@ -507,14 +424,14 @@
         if(e>s){row.style.display='flex';document.getElementById('selectChar').textContent=(e-s).toLocaleString();} else row.style.display='none';
     }
 
+    function showToast(msg) { toast.textContent = msg; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 2500); }
     document.getElementById('btnUndo').onclick=()=>{if(!isPreviewMode){document.execCommand('undo');textInput.focus();}};
     document.getElementById('btnRedo').onclick=()=>{if(!isPreviewMode){document.execCommand('redo');textInput.focus();}};
 
     ['input','click','mouseup','keyup'].forEach(ev => textInput.addEventListener(ev, updateCounts));
     
-    // 시작
     init();
-    setInterval(() => { if(!isPreviewMode) saveAll(); }, 180000); // 3분 자동저장
+    setInterval(() => { if(!isPreviewMode) saveAll(); }, 180000);
 
 </script>
 </body>

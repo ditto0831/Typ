@@ -6,12 +6,14 @@
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
     
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
     <meta property="og:type" content="website">
-    <meta property="og:title" content="글자수세기 Pro">
-    <meta property="og:description" content="이동 가능한 패널이 있는 에디터">
+    <meta property="og:title" content="글자수세기 Pro (Markdown)">
+    <meta property="og:description" content="마크다운 지원 에디터">
     <meta property="og:image" content="thumb.png">
 
-    <title>글자수세기 Pro</title>
+    <title>글자수세기 Pro (MD)</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -23,7 +25,8 @@
             position: relative;
         }
 
-        textarea {
+        /* === 에디터 & 프리뷰 공통 스타일 === */
+        textarea, #markdownPreview {
             width: 100%;
             height: 100%;
             border: none;
@@ -37,11 +40,37 @@
             box-sizing: border-box;
             overflow-y: auto;
             background-color: transparent;
+            position: absolute; /* 겹치게 배치 */
+            top: 0;
+            left: 0;
         }
 
-        textarea::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track { background: transparent; }
-        textarea::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+        textarea { z-index: 10; } /* 기본은 에디터가 위 */
+        
+        textarea::-webkit-scrollbar, #markdownPreview::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track, #markdownPreview::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb, #markdownPreview::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+
+        /* === 마크다운 프리뷰 스타일 === */
+        #markdownPreview {
+            display: none; /* 기본 숨김 */
+            z-index: 20;   /* 활성화 시 에디터보다 위 */
+            background-color: white; /* 배경색 필수 */
+        }
+        
+        /* 마크다운 요소별 디자인 */
+        #markdownPreview h1, #markdownPreview h2, #markdownPreview h3 { border-bottom: 1px solid #eee; padding-bottom: 0.3em; margin-top: 1.5em; }
+        #markdownPreview h1 { font-size: 2em; }
+        #markdownPreview h2 { font-size: 1.5em; }
+        #markdownPreview blockquote { border-left: 4px solid #ddd; padding-left: 1em; color: #666; margin: 1em 0; }
+        #markdownPreview code { background: #f4f4f4; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+        #markdownPreview pre { background: #f8f8f8; padding: 1em; border-radius: 8px; overflow-x: auto; }
+        #markdownPreview pre code { background: none; padding: 0; }
+        #markdownPreview img { max-width: 100%; border-radius: 8px; }
+        #markdownPreview ul, #markdownPreview ol { padding-left: 1.5em; }
+        #markdownPreview a { color: #0366d6; text-decoration: none; }
+        #markdownPreview a:hover { text-decoration: underline; }
+        #markdownPreview hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
 
         /* === 플로팅 패널 스타일 === */
         .floating-panel {
@@ -49,7 +78,7 @@
             top: 20px;
             right: 20px;
             width: 260px;
-            background-color: rgba(255, 255, 255, 0.95); /* 평소엔 잘 보이게 */
+            background-color: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(0,0,0,0.1);
@@ -57,20 +86,14 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             display: flex;
             flex-direction: column;
-            z-index: 100;
-            transition: opacity 0.3s ease, height 0.3s ease; /* 부드러운 전환 효과 */
-            overflow: hidden; /* 접었을 때 내용 숨김 */
+            z-index: 100; /* 최상단 유지 */
+            transition: opacity 0.3s ease, height 0.3s ease;
+            overflow: hidden;
         }
 
-        /* 타이핑 중일 때 흐려짐 (JS로 제어) */
-        .floating-panel.faded {
-            opacity: 0.2; /* 아주 흐릿하게 */
-        }
-        .floating-panel:hover {
-            opacity: 1 !important; /* 마우스 올리면 다시 선명하게 */
-        }
+        .floating-panel.faded { opacity: 0.2; }
+        .floating-panel:hover { opacity: 1 !important; }
 
-        /* 패널 헤더 (드래그 핸들) */
         .panel-header {
             height: 28px;
             background-color: #f1f3f5;
@@ -79,52 +102,19 @@
             align-items: center;
             justify-content: space-between;
             padding: 0 10px;
-            cursor: grab; /* 손바닥 모양 커서 */
+            cursor: grab;
             user-select: none;
         }
         .panel-header:active { cursor: grabbing; }
 
-        .drag-label {
-            font-size: 11px;
-            font-weight: bold;
-            color: #888;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        
-        /* 접기 버튼 */
-        .minimize-btn {
-            border: none;
-            background: none;
-            font-size: 18px;
-            line-height: 1;
-            color: #888;
-            cursor: pointer;
-            padding: 0 5px;
-        }
+        .drag-label { font-size: 11px; font-weight: bold; color: #888; display: flex; align-items: center; gap: 5px; }
+        .minimize-btn { border: none; background: none; font-size: 18px; line-height: 1; color: #888; cursor: pointer; padding: 0 5px; }
         .minimize-btn:hover { color: #333; }
 
-        /* 패널 내용물 영역 */
-        .panel-content {
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+        .panel-content { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+        .floating-panel.minimized { height: 28px; width: 120px; opacity: 0.7; }
+        .floating-panel.minimized .panel-content { display: none; }
 
-        /* 패널이 접혔을 때 스타일 */
-        .floating-panel.minimized {
-            height: 28px; /* 헤더 높이만큼만 남김 */
-            width: 120px; /* 너비도 줄임 */
-            opacity: 0.7;
-        }
-        .floating-panel.minimized .panel-content {
-            display: none;
-        }
-
-
-        /* (기존 버튼 및 통계 스타일 유지) */
         .panel-row { display: flex; justify-content: space-between; align-items: center; }
         .btn-group { display: flex; gap: 4px; }
         .icon-btn {
@@ -134,6 +124,7 @@
         }
         .icon-btn:hover { background-color: rgba(0,0,0,0.05); color: #000; }
         .icon-btn:active { transform: translateY(1px); }
+        .icon-btn.active { background-color: #e3f2fd; color: #1565c0; border-color: #bbdefb; } /* 활성화 상태 */
         .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
         .sep { width: 1px; height: 14px; background: #ddd; margin: 0 4px; }
 
@@ -185,7 +176,10 @@
                 </div>
                 <div class="sep"></div>
                 <div class="btn-group">
-                     <button class="icon-btn" id="btnSymbol" title="특수문자">
+                    <button class="icon-btn" id="btnPreview" title="마크다운 미리보기">
+                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                    </button>
+                    <button class="icon-btn" id="btnSymbol" title="특수문자">
                         <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
                     </button>
                 </div>
@@ -207,34 +201,69 @@
     </div>
 
     <input type="file" id="fileInput" accept=".json">
-    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요... (패널 상단을 잡아 끌면 이동합니다)"></textarea>
+    
+    <div id="markdownPreview"></div>
+    
+    <textarea id="textInput" placeholder="[마크다운 지원]
+# 제목 1
+## 제목 2
+- 리스트 아이템
+**굵은 글씨**
+
+내용을 입력하세요... (패널 상단을 잡아 끌면 이동합니다)"></textarea>
+    
     <div id="toast" class="toast">메시지</div>
 
 <script>
     const textInput = document.getElementById('textInput');
+    const markdownPreview = document.getElementById('markdownPreview');
     const symbolPalette = document.getElementById('symbolPalette');
     const toast = document.getElementById('toast');
     const panel = document.getElementById('floatingPanel');
     const dragHandle = document.getElementById('dragHandle');
     const btnMinimize = document.getElementById('btnMinimize');
+    const btnPreview = document.getElementById('btnPreview');
     const STORAGE_KEY = 'my_editor_content_v1';
 
-    // === 1. 드래그 기능 (PC & 모바일 터치 지원) ===
+    // === 1. 마크다운 미리보기 기능 ===
+    let isPreviewMode = false;
+
+    btnPreview.addEventListener('click', () => {
+        if (!isPreviewMode) {
+            // 미리보기 모드 활성화 (Text -> HTML 변환)
+            const mdText = textInput.value;
+            // marked 라이브러리를 사용해 변환
+            markdownPreview.innerHTML = marked.parse(mdText);
+            
+            textInput.style.display = 'none';
+            markdownPreview.style.display = 'block';
+            
+            btnPreview.classList.add('active'); // 아이콘 색상 변경
+            showToast('미리보기 모드');
+        } else {
+            // 편집 모드로 돌아오기
+            markdownPreview.style.display = 'none';
+            textInput.style.display = 'block';
+            
+            btnPreview.classList.remove('active');
+            textInput.focus();
+        }
+        isPreviewMode = !isPreviewMode;
+    });
+
+    // === 2. 드래그 기능 ===
     let isDragging = false;
     let startX, startY, initialLeft, initialTop;
 
-    // 마우스/터치 시작
     function startDrag(e) {
-        if (e.target.closest('.minimize-btn')) return; // 접기 버튼 클릭 시 드래그 방지
+        if (e.target.closest('.minimize-btn')) return;
         
         isDragging = true;
-        // 터치 이벤트인지 마우스 이벤트인지 구분
         const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
 
-        // 현재 위치 계산 (right, top 대신 left, top으로 변환하여 제어)
         const rect = panel.getBoundingClientRect();
-        panel.style.right = 'auto'; // right 속성 제거
+        panel.style.right = 'auto';
         panel.style.bottom = 'auto';
         panel.style.left = rect.left + 'px';
         panel.style.top = rect.top + 'px';
@@ -245,10 +274,9 @@
         initialTop = rect.top;
     }
 
-    // 드래그 중
     function doDrag(e) {
         if (!isDragging) return;
-        e.preventDefault(); // 스크롤 방지
+        e.preventDefault();
         
         const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
         const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
@@ -260,67 +288,55 @@
         panel.style.top = (initialTop + dy) + 'px';
     }
 
-    // 드래그 종료
-    function endDrag() {
-        isDragging = false;
-    }
+    function endDrag() { isDragging = false; }
 
     dragHandle.addEventListener('mousedown', startDrag);
     document.addEventListener('mousemove', doDrag);
     document.addEventListener('mouseup', endDrag);
 
-    // 모바일 터치 지원
     dragHandle.addEventListener('touchstart', startDrag, {passive: false});
     document.addEventListener('touchmove', doDrag, {passive: false});
     document.addEventListener('touchend', endDrag);
 
-
-    // === 2. 자동 투명화 & 접기 기능 ===
-    
-    // 타이핑 중 자동 투명화
+    // === 3. 패널 제어 & 자동 저장 ===
     textInput.addEventListener('input', () => {
         panel.classList.add('faded');
-        updateCounts(); // 기존 카운트 함수
+        updateCounts();
         saveContent(false);
     });
 
-    // 마우스가 패널 위에 올라가거나, 입력이 멈추고 2초 뒤 복구? 
-    // -> 그냥 hover CSS로 처리 + 타이핑 멈추면 복구
     let typeTimer;
     textInput.addEventListener('keyup', () => {
         clearTimeout(typeTimer);
-        typeTimer = setTimeout(() => {
-            panel.classList.remove('faded');
-        }, 800); // 타이핑 멈추고 0.8초 뒤 선명해짐
+        typeTimer = setTimeout(() => { panel.classList.remove('faded'); }, 800);
     });
 
-    // 패널 접기/펴기
     btnMinimize.addEventListener('click', () => {
         panel.classList.toggle('minimized');
         btnMinimize.textContent = panel.classList.contains('minimized') ? '□' : '_';
     });
 
-
-    // === 3. 기존 기능들 (특수문자, 저장 등) ===
+    // === 4. 특수문자 & 툴 ===
     const symbols = [
-        '🤫', 'ⓤ', 'ⓒ', '→', '←', '↔', 
-        '📕', '📙', '📗', '📘', '💋', '🫦', 
-        '🔥', '💦', '💤', '❌', '✅', '⚠️', 
-        '「', '」', '『', '』', '【', '】',
-        '·', '–', '×', '÷', '√', '∞'
+        '# ', '- ', '**', '>', '```', '[]()', 
+        '🤫', '→', '←', '❌', '✅', '⚠️', 
+        '「', '」', '『', '』', '×', '÷'
     ];
+    // 마크다운 문법도 심볼에 일부 추가함
     symbols.forEach(char => {
         const btn = document.createElement('button');
         btn.className = 'sym-btn'; btn.textContent = char;
         btn.onclick = () => insertSymbol(char);
         symbolPalette.appendChild(btn);
     });
+    
     document.getElementById('btnSymbol').addEventListener('click', () => {
-        if(panel.classList.contains('minimized')) return; // 접혀있으면 동작 안함
+        if(panel.classList.contains('minimized')) return;
         symbolPalette.classList.toggle('show');
     });
 
     function insertSymbol(char) {
+        if(isPreviewMode) return showToast('편집 모드에서만 가능합니다');
         const start = textInput.selectionStart; const end = textInput.selectionEnd;
         const text = textInput.value;
         textInput.value = text.substring(0, start) + char + text.substring(end);
@@ -364,8 +380,14 @@
         reader.readAsText(file); fileInput.value='';
     });
 
-    document.getElementById('btnUndo').addEventListener('click', () => { document.execCommand('undo'); textInput.focus(); });
-    document.getElementById('btnRedo').addEventListener('click', () => { document.execCommand('redo'); textInput.focus(); });
+    document.getElementById('btnUndo').addEventListener('click', () => { 
+        if(isPreviewMode) return;
+        document.execCommand('undo'); textInput.focus(); 
+    });
+    document.getElementById('btnRedo').addEventListener('click', () => { 
+        if(isPreviewMode) return;
+        document.execCommand('redo'); textInput.focus(); 
+    });
 
     function saveContent(isAuto = false) { localStorage.setItem(STORAGE_KEY, textInput.value); if(isAuto) showToast('자동 저장됨'); }
     function estimateTokens(text) { 
@@ -387,7 +409,7 @@
         const s = localStorage.getItem(STORAGE_KEY); 
         if(s) { textInput.value=s; updateCounts(); showToast('복구 완료'); }
     });
-    setInterval(() => { if(textInput.value) saveContent(true); }, 180000);
+    setInterval(() => { if(textInput.value && !isPreviewMode) saveContent(true); }, 180000);
     window.addEventListener('beforeunload', () => saveContent(false));
     ['input','click','mouseup','keyup'].forEach(ev => textInput.addEventListener(ev, updateCounts));
 

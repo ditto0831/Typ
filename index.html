@@ -3,128 +3,136 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📚</text></svg>">
     
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <meta property="og:type" content="website">
-    <meta property="og:title" content="글자수세기 Pro (Markdown)">
-    <meta property="og:description" content="마크다운 지원 에디터">
-    <meta property="og:image" content="thumb.png">
+    <meta property="og:title" content="프로젝트 에디터 Pro">
+    <meta property="og:description" content="여러 페이지를 관리할 수 있는 프로젝트형 에디터">
 
-    <title>글자수세기 Pro (MD)</title>
+    <title>프로젝트 에디터 Pro</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background-color: #ffffff;
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            overflow: hidden;
-            position: relative;
+            background-color: #f7f9fc; /* 배경색 약간 더 차분하게 */
+            margin: 0; padding: 0; height: 100vh; overflow: hidden; position: relative;
         }
 
-        /* === 에디터 & 프리뷰 공통 스타일 === */
+        /* === 사이드바 스타일 === */
+        .sidebar {
+            position: fixed; top: 0; left: 0; bottom: 0;
+            width: 260px; background-color: #fff;
+            border-right: 1px solid #e0e0e0;
+            z-index: 50;
+            transform: translateX(-100%); /* 기본 숨김 */
+            transition: transform 0.3s ease;
+            display: flex; flex-direction: column;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        .sidebar.open { transform: translateX(0); }
+
+        .sidebar-header {
+            padding: 20px; font-weight: bold; font-size: 18px; color: #333;
+            border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-sidebar-btn { border: none; background: none; font-size: 20px; cursor: pointer; color: #888; }
+        
+        .page-list {
+            flex: 1; overflow-y: auto; padding: 10px;
+            list-style: none; margin: 0;
+        }
+        .page-item {
+            padding: 10px 12px; margin-bottom: 4px; border-radius: 6px;
+            cursor: pointer; font-size: 14px; color: #555;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: background 0.2s;
+        }
+        .page-item:hover { background-color: #f1f3f5; }
+        .page-item.active { background-color: #e3f2fd; color: #1565c0; font-weight: 600; }
+        
+        .page-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px; }
+        .delete-page-btn {
+            visibility: hidden; border: none; background: none; color: #ff5252;
+            cursor: pointer; font-size: 16px; padding: 0 4px;
+        }
+        .page-item:hover .delete-page-btn { visibility: visible; }
+
+        .sidebar-footer { padding: 15px; border-top: 1px solid #eee; }
+        .add-page-btn {
+            width: 100%; padding: 10px; background-color: #333; color: white;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+        }
+        .add-page-btn:hover { background-color: #555; }
+
+        /* === 메인 영역 === */
+        .main-content {
+            height: 100%; transition: margin-left 0.3s ease;
+            position: relative; background-color: white;
+        }
+        /* 사이드바 열리면 메인 영역 밀기 (PC에서만) */
+        @media (min-width: 768px) {
+            .sidebar.open + .main-content { margin-left: 260px; }
+        }
+
+        /* 햄버거 버튼 (메뉴 열기) */
+        .menu-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 40;
+            background: rgba(255,255,255,0.8); border: 1px solid #ddd;
+            border-radius: 8px; padding: 8px 12px; cursor: pointer;
+            font-size: 20px; color: #555; transition: all 0.2s;
+        }
+        .menu-btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+        /* 에디터 스타일 */
         textarea, #markdownPreview {
-            width: 100%;
-            height: 100%;
-            border: none;
-            resize: none;
-            outline: none;
-            font-size: 17px; 
-            line-height: 1.8;
-            color: #333;
+            width: 100%; height: 100%; border: none; resize: none; outline: none;
+            font-size: 17px; line-height: 1.8; color: #333;
             font-family: 'Pretendard', sans-serif;
-            padding: 40px 50px; 
-            box-sizing: border-box;
-            overflow-y: auto;
-            background-color: transparent;
-            position: absolute; /* 겹치게 배치 */
-            top: 0;
-            left: 0;
+            padding: 80px 50px 40px 50px; /* 상단 여백 늘림 (메뉴버튼 때문) */
+            box-sizing: border-box; overflow-y: auto; background-color: transparent;
+            position: absolute; top: 0; left: 0;
         }
-
-        textarea { z-index: 10; } /* 기본은 에디터가 위 */
+        textarea { z-index: 10; }
+        #markdownPreview { display: none; z-index: 20; background-color: white; }
         
-        textarea::-webkit-scrollbar, #markdownPreview::-webkit-scrollbar { width: 8px; }
-        textarea::-webkit-scrollbar-track, #markdownPreview::-webkit-scrollbar-track { background: transparent; }
-        textarea::-webkit-scrollbar-thumb, #markdownPreview::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
-
-        /* === 마크다운 프리뷰 스타일 === */
-        #markdownPreview {
-            display: none; /* 기본 숨김 */
-            z-index: 20;   /* 활성화 시 에디터보다 위 */
-            background-color: white; /* 배경색 필수 */
-        }
-        
-        /* 마크다운 요소별 디자인 */
-        #markdownPreview h1, #markdownPreview h2, #markdownPreview h3 { border-bottom: 1px solid #eee; padding-bottom: 0.3em; margin-top: 1.5em; }
-        #markdownPreview h1 { font-size: 2em; }
-        #markdownPreview h2 { font-size: 1.5em; }
+        /* 마크다운 스타일 */
+        #markdownPreview h1 { border-bottom: 1px solid #eee; padding-bottom: 0.3em; margin-top: 0; }
         #markdownPreview blockquote { border-left: 4px solid #ddd; padding-left: 1em; color: #666; margin: 1em 0; }
-        #markdownPreview code { background: #f4f4f4; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+        #markdownPreview code { background: #f4f4f4; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
         #markdownPreview pre { background: #f8f8f8; padding: 1em; border-radius: 8px; overflow-x: auto; }
-        #markdownPreview pre code { background: none; padding: 0; }
         #markdownPreview img { max-width: 100%; border-radius: 8px; }
-        #markdownPreview ul, #markdownPreview ol { padding-left: 1.5em; }
-        #markdownPreview a { color: #0366d6; text-decoration: none; }
-        #markdownPreview a:hover { text-decoration: underline; }
-        #markdownPreview hr { border: none; border-top: 2px solid #eee; margin: 2em 0; }
 
-        /* === 플로팅 패널 스타일 === */
+        /* === 플로팅 패널 (Tool Box) === */
         .floating-panel {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            width: 260px;
+            position: absolute; top: 20px; right: 20px; width: 260px;
             background-color: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 12px;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-            display: flex;
-            flex-direction: column;
-            z-index: 100; /* 최상단 유지 */
-            transition: opacity 0.3s ease, height 0.3s ease;
-            overflow: hidden;
+            display: flex; flex-direction: column; z-index: 100;
+            transition: opacity 0.3s;
         }
-
         .floating-panel.faded { opacity: 0.2; }
         .floating-panel:hover { opacity: 1 !important; }
-
         .panel-header {
-            height: 28px;
-            background-color: #f1f3f5;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 10px;
-            cursor: grab;
-            user-select: none;
+            height: 28px; background-color: #f1f3f5; border-bottom: 1px solid #e9ecef;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+            cursor: grab; user-select: none;
         }
-        .panel-header:active { cursor: grabbing; }
-
-        .drag-label { font-size: 11px; font-weight: bold; color: #888; display: flex; align-items: center; gap: 5px; }
-        .minimize-btn { border: none; background: none; font-size: 18px; line-height: 1; color: #888; cursor: pointer; padding: 0 5px; }
-        .minimize-btn:hover { color: #333; }
-
+        .minimize-btn { border: none; background: none; cursor: pointer; color: #888; }
         .panel-content { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-        .floating-panel.minimized { height: 28px; width: 120px; opacity: 0.7; }
         .floating-panel.minimized .panel-content { display: none; }
-
+        
         .panel-row { display: flex; justify-content: space-between; align-items: center; }
         .btn-group { display: flex; gap: 4px; }
         .icon-btn {
             background: transparent; border: 1px solid transparent; cursor: pointer;
             padding: 6px; border-radius: 6px; color: #555;
-            display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center;
         }
-        .icon-btn:hover { background-color: rgba(0,0,0,0.05); color: #000; }
-        .icon-btn:active { transform: translateY(1px); }
-        .icon-btn.active { background-color: #e3f2fd; color: #1565c0; border-color: #bbdefb; } /* 활성화 상태 */
+        .icon-btn:hover { background-color: rgba(0,0,0,0.05); }
+        .icon-btn.active { background-color: #e3f2fd; color: #1565c0; border-color: #bbdefb; }
         .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
         .sep { width: 1px; height: 14px; background: #ddd; margin: 0 4px; }
 
@@ -133,27 +141,13 @@
             background-color: rgba(0,0,0,0.03); padding: 8px; border-radius: 8px;
         }
         .stat-line { display: flex; justify-content: space-between; }
-        .stat-line strong { color: #333; }
-        .token-text { color: #673ab7; }
-
-        .symbol-palette {
-            display: none; grid-template-columns: repeat(6, 1fr); gap: 4px;
-            background-color: #f8f9fa; padding: 8px; border-radius: 8px;
-            margin-top: 5px; border: 1px solid #eee;
-        }
-        .symbol-palette.show { display: grid; }
-        .sym-btn {
-            background: #fff; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;
-            padding: 6px 0; font-size: 14px; text-align: center; color: #333; transition: background 0.2s;
-        }
-        .sym-btn:hover { background-color: #e3f2fd; border-color: #90caf9; }
+        .token-text { color: #673ab7; font-weight: bold; }
 
         .toast {
             visibility: hidden; min-width: 200px; background-color: rgba(40, 40, 40, 0.95);
             color: #fff; text-align: center; border-radius: 50px; padding: 12px 24px;
             position: fixed; z-index: 1000; left: 50%; bottom: 40px; transform: translateX(-50%);
-            font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s, bottom 0.3s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            opacity: 0; transition: opacity 0.3s, bottom 0.3s;
         }
         .toast.show { visibility: visible; opacity: 1; bottom: 60px; }
         #fileInput { display: none; }
@@ -161,235 +155,324 @@
 </head>
 <body>
 
-    <div class="floating-panel" id="floatingPanel">
-        
-        <div class="panel-header" id="dragHandle">
-            <span class="drag-label">⠿ Tool Box</span>
-            <button class="minimize-btn" id="btnMinimize" title="접기/펴기">_</button>
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <span>🗂️ 프로젝트 페이지</span>
+            <button class="close-sidebar-btn" id="btnCloseSidebar">×</button>
         </div>
-
-        <div class="panel-content">
-            <div class="panel-row">
-                <div class="btn-group">
-                    <button class="icon-btn" id="btnSaveJson" title="저장"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg></button>
-                    <button class="icon-btn" id="btnLoadJson" title="불러오기"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
-                </div>
-                <div class="sep"></div>
-                <div class="btn-group">
-                    <button class="icon-btn" id="btnPreview" title="마크다운 미리보기">
-                        <svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                    </button>
-                    <button class="icon-btn" id="btnSymbol" title="특수문자">
-                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
-                    </button>
-                </div>
-                <div class="sep"></div>
-                <div class="btn-group">
-                    <button class="icon-btn" id="btnUndo"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
-                    <button class="icon-btn" id="btnRedo"><svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
-                </div>
-            </div>
-
-            <div class="symbol-palette" id="symbolPalette"></div>
-
-            <div class="stats-info">
-                <div class="stat-line"><span>AI 토큰</span><strong id="totalToken" class="token-text">0</strong></div>
-                <div class="stat-line"><span>글자수</span><strong id="totalChar">0</strong></div>
-                <div class="stat-line" id="selectionRow" style="display:none; color:#1565c0;"><span>선택</span><strong id="selectChar">0</strong></div>
-            </div>
+        <ul class="page-list" id="pageList">
+            </ul>
+        <div class="sidebar-footer">
+            <button class="add-page-btn" id="btnAddPage">+ 새 페이지 추가</button>
         </div>
     </div>
 
-    <input type="file" id="fileInput" accept=".json">
-    
-    <div id="markdownPreview"></div>
-    
-    <textarea id="textInput" placeholder="[마크다운 지원]
-# 제목 1
-## 제목 2
-- 리스트 아이템
-**굵은 글씨**
+    <div class="main-content">
+        <button class="menu-btn" id="btnMenu" title="페이지 목록 열기">☰</button>
 
-내용을 입력하세요... (패널 상단을 잡아 끌면 이동합니다)"></textarea>
+        <div class="floating-panel" id="floatingPanel">
+            <div class="panel-header" id="dragHandle">
+                <span class="drag-label" style="font-size:11px; font-weight:bold; color:#888;">⠿ Tool Box</span>
+                <button class="minimize-btn" id="btnMinimize">_</button>
+            </div>
+            <div class="panel-content">
+                <div class="panel-row">
+                    <div class="btn-group">
+                        <button class="icon-btn" id="btnSaveJson" title="전체 프로젝트 저장"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg></button>
+                        <button class="icon-btn" id="btnLoadJson" title="프로젝트 불러오기"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
+                    </div>
+                    <div class="sep"></div>
+                    <div class="btn-group">
+                        <button class="icon-btn" id="btnPreview" title="마크다운 미리보기"><svg viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg></button>
+                    </div>
+                    <div class="sep"></div>
+                    <div class="btn-group">
+                        <button class="icon-btn" id="btnUndo"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                        <button class="icon-btn" id="btnRedo"><svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+                    </div>
+                </div>
+                <div class="stats-info">
+                    <div class="stat-line"><span>AI 토큰</span><strong id="totalToken" class="token-text">0</strong></div>
+                    <div class="stat-line"><span>글자수</span><strong id="totalChar">0</strong></div>
+                    <div class="stat-line" id="selectionRow" style="display:none; color:#1565c0;"><span>선택</span><strong id="selectChar">0</strong></div>
+                </div>
+            </div>
+        </div>
+
+        <input type="file" id="fileInput" accept=".json">
+        <div id="markdownPreview"></div>
+        <textarea id="textInput" placeholder="# 새 페이지\n\n내용을 입력하세요. 첫 번째 줄이 페이지 제목이 됩니다."></textarea>
+    </div>
     
     <div id="toast" class="toast">메시지</div>
 
 <script>
+    // === 전역 변수 ===
     const textInput = document.getElementById('textInput');
     const markdownPreview = document.getElementById('markdownPreview');
-    const symbolPalette = document.getElementById('symbolPalette');
     const toast = document.getElementById('toast');
-    const panel = document.getElementById('floatingPanel');
-    const dragHandle = document.getElementById('dragHandle');
-    const btnMinimize = document.getElementById('btnMinimize');
-    const btnPreview = document.getElementById('btnPreview');
-    const STORAGE_KEY = 'my_editor_content_v1';
-
-    // === 1. 마크다운 미리보기 기능 ===
-    let isPreviewMode = false;
-
-    btnPreview.addEventListener('click', () => {
-        if (!isPreviewMode) {
-            // 미리보기 모드 활성화 (Text -> HTML 변환)
-            const mdText = textInput.value;
-            // marked 라이브러리를 사용해 변환
-            markdownPreview.innerHTML = marked.parse(mdText);
-            
-            textInput.style.display = 'none';
-            markdownPreview.style.display = 'block';
-            
-            btnPreview.classList.add('active'); // 아이콘 색상 변경
-            showToast('미리보기 모드');
-        } else {
-            // 편집 모드로 돌아오기
-            markdownPreview.style.display = 'none';
-            textInput.style.display = 'block';
-            
-            btnPreview.classList.remove('active');
-            textInput.focus();
-        }
-        isPreviewMode = !isPreviewMode;
-    });
-
-    // === 2. 드래그 기능 ===
-    let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
-
-    function startDrag(e) {
-        if (e.target.closest('.minimize-btn')) return;
-        
-        isDragging = true;
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-        const rect = panel.getBoundingClientRect();
-        panel.style.right = 'auto';
-        panel.style.bottom = 'auto';
-        panel.style.left = rect.left + 'px';
-        panel.style.top = rect.top + 'px';
-
-        startX = clientX;
-        startY = clientY;
-        initialLeft = rect.left;
-        initialTop = rect.top;
-    }
-
-    function doDrag(e) {
-        if (!isDragging) return;
-        e.preventDefault();
-        
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-
-        panel.style.left = (initialLeft + dx) + 'px';
-        panel.style.top = (initialTop + dy) + 'px';
-    }
-
-    function endDrag() { isDragging = false; }
-
-    dragHandle.addEventListener('mousedown', startDrag);
-    document.addEventListener('mousemove', doDrag);
-    document.addEventListener('mouseup', endDrag);
-
-    dragHandle.addEventListener('touchstart', startDrag, {passive: false});
-    document.addEventListener('touchmove', doDrag, {passive: false});
-    document.addEventListener('touchend', endDrag);
-
-    // === 3. 패널 제어 & 자동 저장 ===
-    textInput.addEventListener('input', () => {
-        panel.classList.add('faded');
-        updateCounts();
-        saveContent(false);
-    });
-
-    let typeTimer;
-    textInput.addEventListener('keyup', () => {
-        clearTimeout(typeTimer);
-        typeTimer = setTimeout(() => { panel.classList.remove('faded'); }, 800);
-    });
-
-    btnMinimize.addEventListener('click', () => {
-        panel.classList.toggle('minimized');
-        btnMinimize.textContent = panel.classList.contains('minimized') ? '□' : '_';
-    });
-
-    // === 4. 특수문자 & 툴 ===
-    const symbols = [
-        '# ', '- ', '**', '>', '```', '[]()', 
-        '🤫', '→', '←', '❌', '✅', '⚠️', 
-        '「', '」', '『', '』', '×', '÷'
-    ];
-    // 마크다운 문법도 심볼에 일부 추가함
-    symbols.forEach(char => {
-        const btn = document.createElement('button');
-        btn.className = 'sym-btn'; btn.textContent = char;
-        btn.onclick = () => insertSymbol(char);
-        symbolPalette.appendChild(btn);
-    });
     
-    document.getElementById('btnSymbol').addEventListener('click', () => {
-        if(panel.classList.contains('minimized')) return;
-        symbolPalette.classList.toggle('show');
+    // 사이드바 관련
+    const sidebar = document.getElementById('sidebar');
+    const btnMenu = document.getElementById('btnMenu');
+    const btnCloseSidebar = document.getElementById('btnCloseSidebar');
+    const pageListEl = document.getElementById('pageList');
+    const btnAddPage = document.getElementById('btnAddPage');
+
+    // 데이터 상태 관리
+    let pages = [ { id: Date.now(), content: '' } ]; // 페이지 배열
+    let currentPageIndex = 0; // 현재 보고 있는 페이지
+    
+    const STORAGE_KEY = 'my_project_data_v2'; // 키 값 변경 (구조가 바뀌어서)
+
+    // === 1. 초기화 및 데이터 로드 ===
+    window.addEventListener('load', () => {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                // 구버전 데이터(단일 문자열) 처리
+                if (parsed.content) { 
+                    pages = [{ id: Date.now(), content: parsed.content }];
+                } 
+                // 신버전 데이터(페이지 배열) 처리
+                else if (Array.isArray(parsed)) {
+                    pages = parsed;
+                }
+            } catch (e) { console.error('Data Load Error'); }
+        }
+        
+        if(pages.length === 0) pages.push({ id: Date.now(), content: '' });
+        
+        renderSidebar();
+        loadPage(0);
+        
+        // PC 화면이면 사이드바 기본 열기
+        if(window.innerWidth > 768) sidebar.classList.add('open');
     });
 
-    function insertSymbol(char) {
-        if(isPreviewMode) return showToast('편집 모드에서만 가능합니다');
-        const start = textInput.selectionStart; const end = textInput.selectionEnd;
-        const text = textInput.value;
-        textInput.value = text.substring(0, start) + char + text.substring(end);
-        textInput.selectionStart = textInput.selectionEnd = start + char.length;
-        textInput.focus(); updateCounts(); saveContent(false);
+    // === 2. 페이지 관리 로직 ===
+    
+    // 현재 에디터 내용을 메모리(배열)에 저장
+    function syncCurrentPage() {
+        pages[currentPageIndex].content = textInput.value;
+        updatePageTitleInSidebar(currentPageIndex);
     }
 
-    function showToast(msg) {
-        toast.textContent = msg; toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2500);
+    // 화면에 페이지 불러오기
+    function loadPage(index) {
+        // 기존 페이지 내용 저장 먼저 수행
+        pages[currentPageIndex].content = textInput.value;
+        
+        currentPageIndex = index;
+        textInput.value = pages[index].content || '';
+        
+        // 미리보기 중이었다면 갱신
+        if (markdownPreview.style.display === 'block') {
+            markdownPreview.innerHTML = marked.parse(textInput.value);
+        }
+
+        updateCounts();
+        highlightActivePage();
     }
 
+    // 새 페이지 추가
+    btnAddPage.addEventListener('click', () => {
+        // 현재 내용 저장
+        syncCurrentPage();
+        
+        // 새 페이지 생성
+        pages.push({ id: Date.now(), content: '' });
+        
+        // 사이드바 다시 그리기
+        renderSidebar();
+        
+        // 새 페이지로 이동
+        loadPage(pages.length - 1);
+        
+        // 모바일이면 추가 후 사이드바 닫기
+        if(window.innerWidth <= 768) sidebar.classList.remove('open');
+        
+        textInput.focus();
+        showToast('새 페이지가 추가되었습니다.');
+    });
+
+    // 페이지 삭제
+    function deletePage(index, e) {
+        e.stopPropagation(); // 부모 클릭 방지
+        if (pages.length <= 1) return showToast('최소 한 장은 있어야 합니다.');
+        if (!confirm('정말 이 페이지를 삭제하시겠습니까?')) return;
+
+        pages.splice(index, 1);
+        
+        // 인덱스 조정
+        if (currentPageIndex >= pages.length) currentPageIndex = pages.length - 1;
+        
+        renderSidebar();
+        loadPage(currentPageIndex);
+        saveContent(true);
+        showToast('삭제되었습니다.');
+    }
+
+    // 사이드바 렌더링 (목록 그리기)
+    function renderSidebar() {
+        pageListEl.innerHTML = '';
+        pages.forEach((page, idx) => {
+            const li = document.createElement('li');
+            li.className = 'page-item';
+            if (idx === currentPageIndex) li.classList.add('active');
+            
+            // 제목 추출 (첫 줄)
+            let title = (page.content || '').split('\n')[0].trim().replace(/^[#\s]+/, '');
+            if (!title) title = `페이지 ${idx + 1}`;
+
+            li.innerHTML = `
+                <span class="page-title">${title}</span>
+                <button class="delete-page-btn" title="삭제">×</button>
+            `;
+            
+            // 클릭 이벤트: 페이지 이동
+            li.addEventListener('click', () => loadPage(idx));
+            
+            // 삭제 버튼 이벤트
+            li.querySelector('.delete-page-btn').addEventListener('click', (e) => deletePage(idx, e));
+
+            pageListEl.appendChild(li);
+        });
+    }
+
+    // 사이드바 제목만 실시간 업데이트 (타이핑 시)
+    function updatePageTitleInSidebar(index) {
+        const items = pageListEl.querySelectorAll('.page-item');
+        if(items[index]) {
+            let title = (pages[index].content || '').split('\n')[0].trim().replace(/^[#\s]+/, '');
+            if (!title) title = `페이지 ${index + 1}`;
+            items[index].querySelector('.page-title').textContent = title;
+        }
+    }
+    
+    function highlightActivePage() {
+        const items = pageListEl.querySelectorAll('.page-item');
+        items.forEach((item, idx) => {
+            if (idx === currentPageIndex) item.classList.add('active');
+            else item.classList.remove('active');
+        });
+    }
+
+
+    // === 3. 사이드바 UI 제어 ===
+    btnMenu.addEventListener('click', () => sidebar.classList.add('open'));
+    btnCloseSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+    
+    // === 4. 자동 저장 및 JSON 저장 ===
+    
+    // 입력 감지
+    textInput.addEventListener('input', () => {
+        syncCurrentPage(); // 배열에 즉시 반영
+        updateCounts();
+        saveContent(false); // 로컬 스토리지 저장
+    });
+
+    function saveContent(isAuto = false) {
+        syncCurrentPage();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+        if(isAuto) showToast('자동 저장됨');
+    }
+
+    // JSON 파일로 전체 프로젝트 저장
     document.getElementById('btnSaveJson').addEventListener('click', () => {
-        if (!textInput.value) return showToast('내용 없음');
-        const data = { content: textInput.value, savedAt: new Date().toLocaleString() };
+        syncCurrentPage();
+        const data = pages;
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
+        a.href = url;
         const ts = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"");
-        a.download = `backup_${ts}.json`;
+        a.download = `Project_${ts}.json`;
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        showToast('저장 완료');
+        showToast('전체 프로젝트 저장 완료');
     });
 
+    // 불러오기
     const fileInput = document.getElementById('fileInput');
     document.getElementById('btnLoadJson').addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        if (textInput.value.trim() && !confirm("내용이 대체됩니다. 계속하시겠습니까?")) { fileInput.value=''; return; }
+        if (!confirm("현재 프로젝트가 덮어씌워집니다. 진행할까요?")) { fileInput.value=''; return; }
+        
         const reader = new FileReader();
         reader.onload = function(evt) {
             try {
                 const data = JSON.parse(evt.target.result);
-                if(data.content !== undefined) {
-                    textInput.value = data.content;
-                    updateCounts(); saveContent(false); showToast('불러오기 완료');
-                } else alert('형식 오류');
+                if (Array.isArray(data)) {
+                    pages = data;
+                    currentPageIndex = 0;
+                    renderSidebar();
+                    loadPage(0);
+                    saveContent(false);
+                    showToast('프로젝트 불러오기 성공');
+                } else {
+                    alert('형식이 올바르지 않습니다.');
+                }
             } catch(e) { alert('파일 오류'); }
         };
         reader.readAsText(file); fileInput.value='';
     });
 
-    document.getElementById('btnUndo').addEventListener('click', () => { 
-        if(isPreviewMode) return;
-        document.execCommand('undo'); textInput.focus(); 
-    });
-    document.getElementById('btnRedo').addEventListener('click', () => { 
-        if(isPreviewMode) return;
-        document.execCommand('redo'); textInput.focus(); 
+
+    // === 5. 기타 유틸리티 (마크다운, 드래그 등 기존 기능) ===
+    
+    // 마크다운 미리보기
+    const btnPreview = document.getElementById('btnPreview');
+    btnPreview.addEventListener('click', () => {
+        if (markdownPreview.style.display === 'none') {
+            markdownPreview.innerHTML = marked.parse(textInput.value);
+            textInput.style.display = 'none';
+            markdownPreview.style.display = 'block';
+            btnPreview.classList.add('active');
+        } else {
+            markdownPreview.style.display = 'none';
+            textInput.style.display = 'block';
+            btnPreview.classList.remove('active');
+            textInput.focus();
+        }
     });
 
-    function saveContent(isAuto = false) { localStorage.setItem(STORAGE_KEY, textInput.value); if(isAuto) showToast('자동 저장됨'); }
+    // 패널 드래그
+    const panel = document.getElementById('floatingPanel');
+    const dragHandle = document.getElementById('dragHandle');
+    let isDragging = false, startX, startY, initLeft, initTop;
+    
+    function startDrag(e) {
+        if(e.target.closest('.minimize-btn')) return;
+        isDragging=true;
+        const cx = e.type.includes('touch')?e.touches[0].clientX:e.clientX;
+        const cy = e.type.includes('touch')?e.touches[0].clientY:e.clientY;
+        const r = panel.getBoundingClientRect();
+        panel.style.right='auto'; panel.style.left=r.left+'px'; panel.style.top=r.top+'px';
+        startX=cx; startY=cy; initLeft=r.left; initTop=r.top;
+    }
+    function doDrag(e) {
+        if(!isDragging) return; e.preventDefault();
+        const cx = e.type.includes('touch')?e.touches[0].clientX:e.clientX;
+        const cy = e.type.includes('touch')?e.touches[0].clientY:e.clientY;
+        panel.style.left=(initLeft+(cx-startX))+'px';
+        panel.style.top=(initTop+(cy-startY))+'px';
+    }
+    dragHandle.addEventListener('mousedown', startDrag); document.addEventListener('mousemove', doDrag); document.addEventListener('mouseup', ()=>{isDragging=false});
+    dragHandle.addEventListener('touchstart', startDrag, {passive:false}); document.addEventListener('touchmove', doDrag, {passive:false}); document.addEventListener('touchend', ()=>{isDragging=false});
+
+    // 패널 접기
+    document.getElementById('btnMinimize').addEventListener('click', () => {
+        panel.classList.toggle('minimized');
+    });
+
+    // Undo/Redo
+    document.getElementById('btnUndo').addEventListener('click', () => { document.execCommand('undo'); });
+    document.getElementById('btnRedo').addEventListener('click', () => { document.execCommand('redo'); });
+
+    // 토큰/글자수 계산
     function estimateTokens(text) { 
         if(!text) return 0;
         const cjk = (text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g)||[]).length;
@@ -399,19 +482,16 @@
         const t = textInput.value;
         document.getElementById('totalToken').textContent = estimateTokens(t).toLocaleString();
         document.getElementById('totalChar').textContent = t.length.toLocaleString();
-        const s = textInput.selectionStart, e = textInput.selectionEnd;
-        const row = document.getElementById('selectionRow');
-        if(e>s) { row.style.display='flex'; document.getElementById('selectChar').textContent=(e-s).toLocaleString(); }
-        else row.style.display='none';
     }
 
-    window.addEventListener('load', () => { 
-        const s = localStorage.getItem(STORAGE_KEY); 
-        if(s) { textInput.value=s; updateCounts(); showToast('복구 완료'); }
-    });
-    setInterval(() => { if(textInput.value && !isPreviewMode) saveContent(true); }, 180000);
-    window.addEventListener('beforeunload', () => saveContent(false));
-    ['input','click','mouseup','keyup'].forEach(ev => textInput.addEventListener(ev, updateCounts));
+    // 유틸: 토스트 메시지
+    function showToast(msg) {
+        toast.textContent = msg; toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+    
+    // 자동 저장 타이머
+    setInterval(() => saveContent(true), 180000);
 
 </script>
 </body>

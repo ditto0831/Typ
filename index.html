@@ -2,73 +2,101 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
     
     <meta property="og:type" content="website">
-    <meta property="og:title" content="글자수세기">
-    <meta property="og:description" content="자동 저장 기능이 있는 안전한 웹 에디터">
-    <meta property="og:image" content="2.jpeg">
+    <meta property="og:title" content="몰입형 에디터">
+    <meta property="og:description" content="전체화면 집필 환경을 제공하는 에디터">
+    <meta property="og:image" content="thumb.png">
 
-    <title>글자수세기</title>
+    <title>몰입형 에디터</title>
     <style>
+        /* 1. 전체 화면 레이아웃 설정 */
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            background-color: #f4f4f9;
+            background-color: #ffffff; /* 종이 질감을 위해 완전 흰색 혹은 미색 */
             margin: 0;
-            padding: 20px;
-            box-sizing: border-box;
+            padding: 0;
             height: 100vh;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-        }
-
-        .container {
-            background-color: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            width: 100%;
-            max-width: 800px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            box-sizing: border-box;
+            overflow: hidden; /* 전체 스크롤 막음 */
             position: relative;
         }
 
-        .status-bar {
-            flex-shrink: 0;
+        /* 2. 입력창 (화면 꽉 차게) */
+        textarea {
+            width: 100%;
+            height: 100%;
+            border: none;
+            resize: none;
+            outline: none;
+            
+            /* 고해상도 가독성 세팅 */
+            font-size: 17px; 
+            line-height: 1.8;
+            color: #333;
+            font-family: 'Pretendard', sans-serif;
+            
+            /* 여백: 우측 상단 패널을 가리지 않으면서 편안하게 */
+            padding: 40px 50px; 
+            box-sizing: border-box;
+            
+            overflow-y: auto; /* 내부 스크롤 */
+            background-color: transparent;
+        }
+
+        /* 스크롤바 디자인 (숨기거나 미니멀하게) */
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 4px; }
+
+        /* 3. 우측 상단 플로팅 패널 (캡션 스타일) */
+        .floating-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 240px; /* 적절한 폭 */
+            
+            /* 유리 질감 (Glassmorphism) 효과 */
+            background-color: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            
+            border: 1px solid rgba(0,0,0,0.05);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            
+            padding: 12px;
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+            transition: opacity 0.3s;
+        }
+
+        /* 마우스 안 올리면 흐리게 처리해서 글쓰기 집중? (선택사항) */
+        /* .floating-panel:hover { opacity: 1; }
+           .floating-panel { opacity: 0.6; } */
+
+        /* 버튼 줄 */
+        .panel-row {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            background-color: #f8f9fa;
-            border: 1px solid #e9ecef;
-            border-radius: 8px;
-            padding: 8px 15px;
-            font-size: 12px;
-            color: #555;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 15px;
         }
 
         .btn-group {
             display: flex;
-            gap: 5px;
-            margin-right: 10px;
-            padding-right: 15px;
-            border-right: 1px solid #ddd; 
-            align-items: center;
+            gap: 4px;
         }
 
         .icon-btn {
-            background: none;
+            background: transparent;
             border: 1px solid transparent;
             cursor: pointer;
-            padding: 4px 6px;
-            border-radius: 4px;
+            padding: 6px;
+            border-radius: 6px;
             color: #555;
             display: flex;
             align-items: center;
@@ -76,271 +104,229 @@
             transition: all 0.2s;
         }
         
-        .icon-btn:hover {
-            background-color: #e9ecef;
-            color: #333;
-        }
+        .icon-btn:hover { background-color: rgba(0,0,0,0.05); color: #000; }
+        .icon-btn:active { transform: translateY(1px); }
+        .icon-btn svg { width: 18px; height: 18px; fill: currentColor; }
 
-        .icon-btn:active {
-            background-color: #dee2e6;
-            transform: translateY(1px);
-        }
+        /* 구분선 */
+        .sep { width: 1px; height: 14px; background: #ddd; margin: 0 2px; }
 
-        .icon-btn svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-
-        .stat-group {
+        /* 통계 텍스트 */
+        .stats-info {
+            font-size: 12px;
+            color: #666;
             display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .label { font-weight: 600; color: #777; }
-        .val { font-weight: bold; font-size: 13px; color: #333; }
-        .divider { width: 1px; height: 12px; background-color: #ccc; }
-        .token-val { color: #673ab7; font-weight: 800; }
-
-        .selection-group {
-            display: none;
-            align-items: center;
-            gap: 15px;
-            background-color: #e3f2fd;
-            padding: 2px 8px;
-            border-radius: 4px;
-            margin-left: auto;
-        }
-        .selection-group.active { display: flex; }
-        .selection-group .val { color: #1565c0; }
-
-        textarea {
-            width: 100%;
-            flex: 1;
-            padding: 15px;
-            border: 1px solid #ddd;
+            flex-direction: column;
+            gap: 4px;
+            background-color: rgba(0,0,0,0.03);
+            padding: 8px;
             border-radius: 8px;
-            resize: none;
-            font-size: 14px;
-            box-sizing: border-box;
-            outline: none;
-            line-height: 1.6;
-            font-family: 'Pretendard', sans-serif;
-            color: #333;
-            overflow-y: auto;
         }
-        textarea:focus {
-            border-color: #673ab7;
+        
+        .stat-line {
+            display: flex;
+            justify-content: space-between;
         }
+        .stat-line strong { color: #333; }
+        .token-text { color: #673ab7; }
 
-        textarea::-webkit-scrollbar { width: 10px; }
-        textarea::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 8px; }
-        textarea::-webkit-scrollbar-thumb { background: #ccc; border-radius: 8px; }
-        textarea::-webkit-scrollbar-thumb:hover { background: #bbb; }
+        /* 파일 입력 숨김 */
+        #fileInput { display: none; }
 
+        /* 토스트 메시지 */
         .toast {
             visibility: hidden;
             min-width: 200px;
-            background-color: rgba(50, 50, 50, 0.9);
+            background-color: rgba(40, 40, 40, 0.95);
             color: #fff;
             text-align: center;
             border-radius: 50px;
-            padding: 12px 20px;
+            padding: 12px 24px;
             position: fixed;
             z-index: 1000;
             left: 50%;
-            bottom: 30px;
+            bottom: 40px;
             transform: translateX(-50%);
             font-size: 14px;
             font-weight: 500;
             opacity: 0;
             transition: opacity 0.3s, bottom 0.3s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .toast.show {
             visibility: visible;
             opacity: 1;
-            bottom: 50px;
+            bottom: 60px;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    
-    <div class="status-bar">
-        <div class="btn-group">
-            <button class="icon-btn" id="btnUndo" title="실행 취소 (Ctrl+Z)">
-                <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
-            </button>
-            <button class="icon-btn" id="btnRedo" title="다시 실행 (Ctrl+Y)">
-                <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
-            </button>
-            <div style="width:1px; height:16px; background:#ddd; margin:0 5px;"></div>
-            <button class="icon-btn" id="btnCopy" title="전체 복사">
-                <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
-            </button>
-            <button class="icon-btn" id="btnPaste" title="붙여넣기">
-                <svg viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>
-            </button>
+    <div class="floating-panel">
+        
+        <div class="panel-row">
+            <div class="btn-group">
+                <button class="icon-btn" id="btnSaveJson" title="저장">
+                    <svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+                </button>
+                <button class="icon-btn" id="btnLoadJson" title="불러오기">
+                    <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg>
+                </button>
+            </div>
+            <div class="sep"></div>
+            <div class="btn-group">
+                <button class="icon-btn" id="btnUndo" title="취소">
+                    <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+                </button>
+                <button class="icon-btn" id="btnRedo" title="다시 실행">
+                    <svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg>
+                </button>
+            </div>
+            <div class="sep"></div>
+            <div class="btn-group">
+                <button class="icon-btn" id="btnCopy" title="복사">
+                    <svg viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>
+                </button>
+                <button class="icon-btn" id="btnPaste" title="붙여넣기">
+                    <svg viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>
+                </button>
+            </div>
         </div>
 
-        <div class="stat-group">
-            <span class="label" style="color:#673ab7;">AI 토큰</span>
-            <span class="val token-val" id="totalToken">0</span>
-        </div>
-
-        <div class="divider"></div>
-
-        <div class="stat-group">
-            <span class="label">전체</span>
-            <span class="val"><span id="totalChar">0</span>자</span>
-        </div>
-
-        <div class="selection-group" id="selectionGroup">
-            <div class="stat-group">
-                <span class="label" style="color:#1565c0;">선택</span>
-                <span class="val"><span id="selectChar">0</span>자</span>
+        <div class="stats-info">
+            <div class="stat-line">
+                <span>AI 토큰</span>
+                <strong id="totalToken" class="token-text">0</strong>
+            </div>
+            <div class="stat-line">
+                <span>글자수(전체)</span>
+                <strong id="totalChar">0</strong>
+            </div>
+            <div class="stat-line" id="selectionRow" style="display:none; color:#1565c0;">
+                <span>선택 영역</span>
+                <strong id="selectChar">0</strong>
             </div>
         </div>
     </div>
 
-    <textarea id="textInput" placeholder="내용을 입력하세요. 3분마다 자동으로 저장되며, 창을 닫아도 내용이 유지됩니다."></textarea>
+    <input type="file" id="fileInput" accept=".json">
+
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요..."></textarea>
     
     <div id="toast" class="toast">메시지</div>
-</div>
 
 <script>
     const textInput = document.getElementById('textInput');
     const totalToken = document.getElementById('totalToken');
     const totalChar = document.getElementById('totalChar');
-    const selectionGroup = document.getElementById('selectionGroup');
+    const selectionRow = document.getElementById('selectionRow');
     const selectChar = document.getElementById('selectChar');
-    const btnUndo = document.getElementById('btnUndo');
-    const btnRedo = document.getElementById('btnRedo');
-    const btnCopy = document.getElementById('btnCopy');
-    const btnPaste = document.getElementById('btnPaste');
+    const fileInput = document.getElementById('fileInput');
     const toast = document.getElementById('toast');
 
-    // === [핵심 기능] 로컬 스토리지 키 값 ===
     const STORAGE_KEY = 'my_editor_content_v1';
 
-    // 1. 페이지 로드 시 저장된 내용 불러오기
-    window.addEventListener('load', () => {
-        const savedContent = localStorage.getItem(STORAGE_KEY);
-        if (savedContent) {
-            textInput.value = savedContent;
-            updateCounts();
-            showToast('이전 작성 내용을 복구했습니다.');
-        }
-    });
-
-    // 2. 저장 함수
-    function saveContent(isAuto = false) {
-        localStorage.setItem(STORAGE_KEY, textInput.value);
-        if (isAuto) {
-            showToast('자동 저장 완료 (3분)');
-        }
-    }
-
-    // 3. 3분(180000ms)마다 자동 저장 실행
-    setInterval(() => {
-        if (textInput.value.length > 0) { // 내용이 있을 때만 저장
-            saveContent(true);
-        }
-    }, 180000); 
-
-    // 4. 창을 닫거나 새로고침할 때도 즉시 저장 (안전장치)
-    window.addEventListener('beforeunload', () => {
-        saveContent(false);
-    });
-
-
-    // --- 기존 기능들 ---
-
+    // === 기본 기능 로직 ===
     function showToast(message) {
         toast.textContent = message;
         toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 2500);
+        setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
-    btnUndo.addEventListener('click', () => {
-        document.execCommand('undo');
-        textInput.focus();
+    // 파일 저장
+    document.getElementById('btnSaveJson').addEventListener('click', () => {
+        if (!textInput.value) { showToast('내용이 없습니다.'); return; }
+        const data = { content: textInput.value, savedAt: new Date().toLocaleString() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const timestamp = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"");
+        a.download = `backup_${timestamp}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        showToast('JSON 파일 저장 완료');
     });
 
-    btnRedo.addEventListener('click', () => {
-        document.execCommand('redo');
-        textInput.focus();
-    });
-
-    btnCopy.addEventListener('click', () => {
-        if (!textInput.value) {
-            showToast('복사할 내용이 없습니다.');
-            return;
+    // 파일 불러오기
+    document.getElementById('btnLoadJson').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (textInput.value.trim().length > 0 && !confirm("현재 내용이 대체됩니다. 계속하시겠습니까?")) {
+            fileInput.value = ''; return;
         }
-        navigator.clipboard.writeText(textInput.value)
-            .then(() => {
-                showToast('클립보드에 복사 완료!');
-                textInput.focus();
-            })
-            .catch(err => {
-                showToast('복사 실패 ㅠㅠ');
-            });
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = JSON.parse(evt.target.result);
+                if(data.content !== undefined) {
+                    textInput.value = data.content;
+                    updateCounts(); saveContent(false);
+                    showToast('파일 불러오기 완료');
+                } else alert('파일 형식이 올바르지 않습니다.');
+            } catch(err) { alert('파일 오류 발생'); }
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
     });
 
-    btnPaste.addEventListener('click', async () => {
+    // 편집 버튼 연결
+    document.getElementById('btnUndo').addEventListener('click', () => { document.execCommand('undo'); textInput.focus(); });
+    document.getElementById('btnRedo').addEventListener('click', () => { document.execCommand('redo'); textInput.focus(); });
+    document.getElementById('btnCopy').addEventListener('click', () => {
+        if (!textInput.value) return showToast('내용 없음');
+        navigator.clipboard.writeText(textInput.value).then(() => showToast('복사 완료')).catch(()=>showToast('복사 실패'));
+    });
+    document.getElementById('btnPaste').addEventListener('click', async () => {
         try {
             const text = await navigator.clipboard.readText();
-            if (!text) {
-                showToast('붙여넣을 내용이 없습니다.');
-                return;
-            }
+            if(!text) return showToast('내용 없음');
             const start = textInput.selectionStart;
-            const end = textInput.selectionEnd;
-            const originalText = textInput.value;
-            textInput.value = originalText.substring(0, start) + text + originalText.substring(end);
+            const original = textInput.value;
+            textInput.value = original.slice(0, start) + text + original.slice(textInput.selectionEnd);
             textInput.selectionStart = textInput.selectionEnd = start + text.length;
-            updateCounts();
-            textInput.focus();
-            showToast('붙여넣기 완료!');
-        } catch (err) {
-            alert('보안상의 이유로 붙여넣기가 제한되었습니다. Ctrl+V를 사용해주세요.');
-        }
+            updateCounts(); textInput.focus(); showToast('붙여넣기 완료');
+        } catch(e) { alert('Ctrl+V를 사용하세요.'); }
     });
+
+    // 자동 저장 및 카운트
+    function saveContent(isAuto = false) {
+        localStorage.setItem(STORAGE_KEY, textInput.value);
+        if (isAuto) showToast('자동 저장됨 (3분)');
+    }
 
     function estimateTokens(text) {
         if (!text) return 0;
-        const cjkMatch = text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g);
-        const cjkCount = cjkMatch ? cjkMatch.length : 0;
-        const otherCount = text.length - cjkCount;
-        return Math.ceil((cjkCount * 1.1) + (otherCount * 0.25));
+        const cjk = (text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g) || []).length;
+        return Math.ceil((cjk * 1.1) + ((text.length - cjk) * 0.25));
     }
 
     function updateCounts() {
         const text = textInput.value;
         totalToken.textContent = estimateTokens(text).toLocaleString();
         totalChar.textContent = text.length.toLocaleString();
-        const start = textInput.selectionStart;
-        const end = textInput.selectionEnd;
-        const selectedText = text.substring(start, end);
-
-        if (selectedText.length > 0) {
-            selectionGroup.classList.add('active');
-            selectChar.textContent = selectedText.length.toLocaleString();
+        
+        const selStart = textInput.selectionStart;
+        const selEnd = textInput.selectionEnd;
+        if (selEnd > selStart) {
+            selectionRow.style.display = 'flex';
+            selectChar.textContent = (selEnd - selStart).toLocaleString();
         } else {
-            selectionGroup.classList.remove('active');
+            selectionRow.style.display = 'none';
         }
     }
 
-    ['input', 'click', 'mouseup', 'keyup'].forEach(event => {
-        textInput.addEventListener(event, updateCounts);
+    // 초기화 및 이벤트 리스너
+    window.addEventListener('load', () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) { textInput.value = saved; updateCounts(); showToast('내용 복구됨'); }
     });
-</script>
 
+    setInterval(() => { if(textInput.value) saveContent(true); }, 180000);
+    window.addEventListener('beforeunload', () => saveContent(false));
+    
+    ['input', 'click', 'mouseup', 'keyup'].forEach(ev => textInput.addEventListener(ev, updateCounts));
+
+</script>
 </body>
 </html>

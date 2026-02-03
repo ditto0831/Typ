@@ -7,11 +7,11 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
     
     <meta property="og:type" content="website">
-    <meta property="og:title" content="몰입형 에디터 Pro">
+    <meta property="og:title" content="글자수세기 Pro">
     <meta property="og:description" content="이동 가능한 패널이 있는 에디터">
     <meta property="og:image" content="thumb.png">
 
-    <title>몰입형 에디터 Pro</title>
+    <title>글자수세기 Pro</title>
     <style>
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
@@ -180,4 +180,217 @@
         <div class="panel-content">
             <div class="panel-row">
                 <div class="btn-group">
-                    <button class="icon-btn" id="btnSaveJson" title="저장"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2
+                    <button class="icon-btn" id="btnSaveJson" title="저장"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg></button>
+                    <button class="icon-btn" id="btnLoadJson" title="불러오기"><svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/></svg></button>
+                </div>
+                <div class="sep"></div>
+                <div class="btn-group">
+                     <button class="icon-btn" id="btnSymbol" title="특수문자">
+                        <svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                    </button>
+                </div>
+                <div class="sep"></div>
+                <div class="btn-group">
+                    <button class="icon-btn" id="btnUndo"><svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05.99-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg></button>
+                    <button class="icon-btn" id="btnRedo"><svg viewBox="0 0 24 24"><path d="M18.4 10.6C16.55 9 14.15 8 11.5 8c-4.65 0-8.58 3.03-9.96 7.22L3.9 16c1.05-3.19 4.05-5.5 7.6-5.5 1.95 0 3.73.72 5.12 1.88L13 16h9V7l-3.6 3.6z"/></svg></button>
+                </div>
+            </div>
+
+            <div class="symbol-palette" id="symbolPalette"></div>
+
+            <div class="stats-info">
+                <div class="stat-line"><span>AI 토큰</span><strong id="totalToken" class="token-text">0</strong></div>
+                <div class="stat-line"><span>글자수</span><strong id="totalChar">0</strong></div>
+                <div class="stat-line" id="selectionRow" style="display:none; color:#1565c0;"><span>선택</span><strong id="selectChar">0</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <input type="file" id="fileInput" accept=".json">
+    <textarea id="textInput" placeholder="이곳에 내용을 입력하세요... (패널 상단을 잡아 끌면 이동합니다)"></textarea>
+    <div id="toast" class="toast">메시지</div>
+
+<script>
+    const textInput = document.getElementById('textInput');
+    const symbolPalette = document.getElementById('symbolPalette');
+    const toast = document.getElementById('toast');
+    const panel = document.getElementById('floatingPanel');
+    const dragHandle = document.getElementById('dragHandle');
+    const btnMinimize = document.getElementById('btnMinimize');
+    const STORAGE_KEY = 'my_editor_content_v1';
+
+    // === 1. 드래그 기능 (PC & 모바일 터치 지원) ===
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
+
+    // 마우스/터치 시작
+    function startDrag(e) {
+        if (e.target.closest('.minimize-btn')) return; // 접기 버튼 클릭 시 드래그 방지
+        
+        isDragging = true;
+        // 터치 이벤트인지 마우스 이벤트인지 구분
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+        // 현재 위치 계산 (right, top 대신 left, top으로 변환하여 제어)
+        const rect = panel.getBoundingClientRect();
+        panel.style.right = 'auto'; // right 속성 제거
+        panel.style.bottom = 'auto';
+        panel.style.left = rect.left + 'px';
+        panel.style.top = rect.top + 'px';
+
+        startX = clientX;
+        startY = clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+    }
+
+    // 드래그 중
+    function doDrag(e) {
+        if (!isDragging) return;
+        e.preventDefault(); // 스크롤 방지
+        
+        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        panel.style.left = (initialLeft + dx) + 'px';
+        panel.style.top = (initialTop + dy) + 'px';
+    }
+
+    // 드래그 종료
+    function endDrag() {
+        isDragging = false;
+    }
+
+    dragHandle.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', endDrag);
+
+    // 모바일 터치 지원
+    dragHandle.addEventListener('touchstart', startDrag, {passive: false});
+    document.addEventListener('touchmove', doDrag, {passive: false});
+    document.addEventListener('touchend', endDrag);
+
+
+    // === 2. 자동 투명화 & 접기 기능 ===
+    
+    // 타이핑 중 자동 투명화
+    textInput.addEventListener('input', () => {
+        panel.classList.add('faded');
+        updateCounts(); // 기존 카운트 함수
+        saveContent(false);
+    });
+
+    // 마우스가 패널 위에 올라가거나, 입력이 멈추고 2초 뒤 복구? 
+    // -> 그냥 hover CSS로 처리 + 타이핑 멈추면 복구
+    let typeTimer;
+    textInput.addEventListener('keyup', () => {
+        clearTimeout(typeTimer);
+        typeTimer = setTimeout(() => {
+            panel.classList.remove('faded');
+        }, 800); // 타이핑 멈추고 0.8초 뒤 선명해짐
+    });
+
+    // 패널 접기/펴기
+    btnMinimize.addEventListener('click', () => {
+        panel.classList.toggle('minimized');
+        btnMinimize.textContent = panel.classList.contains('minimized') ? '□' : '_';
+    });
+
+
+    // === 3. 기존 기능들 (특수문자, 저장 등) ===
+    const symbols = [
+        '🤫', 'ⓤ', 'ⓒ', '→', '←', '↔', 
+        '📕', '📙', '📗', '📘', '💋', '🫦', 
+        '🔥', '💦', '💤', '❌', '✅', '⚠️', 
+        '「', '」', '『', '』', '【', '】',
+        '·', '–', '×', '÷', '√', '∞'
+    ];
+    symbols.forEach(char => {
+        const btn = document.createElement('button');
+        btn.className = 'sym-btn'; btn.textContent = char;
+        btn.onclick = () => insertSymbol(char);
+        symbolPalette.appendChild(btn);
+    });
+    document.getElementById('btnSymbol').addEventListener('click', () => {
+        if(panel.classList.contains('minimized')) return; // 접혀있으면 동작 안함
+        symbolPalette.classList.toggle('show');
+    });
+
+    function insertSymbol(char) {
+        const start = textInput.selectionStart; const end = textInput.selectionEnd;
+        const text = textInput.value;
+        textInput.value = text.substring(0, start) + char + text.substring(end);
+        textInput.selectionStart = textInput.selectionEnd = start + char.length;
+        textInput.focus(); updateCounts(); saveContent(false);
+    }
+
+    function showToast(msg) {
+        toast.textContent = msg; toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    document.getElementById('btnSaveJson').addEventListener('click', () => {
+        if (!textInput.value) return showToast('내용 없음');
+        const data = { content: textInput.value, savedAt: new Date().toLocaleString() };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const ts = new Date().toISOString().slice(0,19).replace(/[-T:]/g,"");
+        a.download = `backup_${ts}.json`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        showToast('저장 완료');
+    });
+
+    const fileInput = document.getElementById('fileInput');
+    document.getElementById('btnLoadJson').addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        if (textInput.value.trim() && !confirm("내용이 대체됩니다. 계속하시겠습니까?")) { fileInput.value=''; return; }
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            try {
+                const data = JSON.parse(evt.target.result);
+                if(data.content !== undefined) {
+                    textInput.value = data.content;
+                    updateCounts(); saveContent(false); showToast('불러오기 완료');
+                } else alert('형식 오류');
+            } catch(e) { alert('파일 오류'); }
+        };
+        reader.readAsText(file); fileInput.value='';
+    });
+
+    document.getElementById('btnUndo').addEventListener('click', () => { document.execCommand('undo'); textInput.focus(); });
+    document.getElementById('btnRedo').addEventListener('click', () => { document.execCommand('redo'); textInput.focus(); });
+
+    function saveContent(isAuto = false) { localStorage.setItem(STORAGE_KEY, textInput.value); if(isAuto) showToast('자동 저장됨'); }
+    function estimateTokens(text) { 
+        if(!text) return 0;
+        const cjk = (text.match(/[\u3131-\uD79D\uAC00-\uD7A3\u4E00-\u9FFF]/g)||[]).length;
+        return Math.ceil((cjk*1.1)+((text.length-cjk)*0.25));
+    }
+    function updateCounts() {
+        const t = textInput.value;
+        document.getElementById('totalToken').textContent = estimateTokens(t).toLocaleString();
+        document.getElementById('totalChar').textContent = t.length.toLocaleString();
+        const s = textInput.selectionStart, e = textInput.selectionEnd;
+        const row = document.getElementById('selectionRow');
+        if(e>s) { row.style.display='flex'; document.getElementById('selectChar').textContent=(e-s).toLocaleString(); }
+        else row.style.display='none';
+    }
+
+    window.addEventListener('load', () => { 
+        const s = localStorage.getItem(STORAGE_KEY); 
+        if(s) { textInput.value=s; updateCounts(); showToast('복구 완료'); }
+    });
+    setInterval(() => { if(textInput.value) saveContent(true); }, 180000);
+    window.addEventListener('beforeunload', () => saveContent(false));
+    ['input','click','mouseup','keyup'].forEach(ev => textInput.addEventListener(ev, updateCounts));
+
+</script>
+</body>
+</html>
